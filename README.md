@@ -1,3 +1,1 @@
-# vesionbook-srs-task
-
-SRS流媒体服务器，任务调度器
+1. swagger地址：http://192.168.12.86:8085/swagger-ui/
