@@ -1,5 +1,6 @@
 package com.intellif.vesionbook.srstask.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import springfox.documentation.builders.ApiInfoBuilder;
@@ -10,12 +11,17 @@ import springfox.documentation.service.ApiInfo;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 
+
 @EnableOpenApi
 @Configuration
 public class SwaggerConfig {
+    @Value("${swagger.enable:true}")
+    private Boolean enable;
+
     @Bean
     public Docket createRestApi() {
         return new Docket(DocumentationType.OAS_30)
+                .enable(enable)
                 .apiInfo(apiInfo())
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("com.intellif.vesionbook.srstask.controller"))

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.intellif.vesionbook.srstask.mapper.StreamTaskMapper">
+    <sql id="Base_Column_List">
+        id, origin, app, unique_id, service, rtmp_output, http_flv_output, hls_output, webrtc_output, status, create_time, update_time
+    </sql>
+
+    <!--  <select id="selectByPrimaryKey" resultType="com.intellif.vesionbook.srstask.model.entity.StreamTask" parameterType="java.lang.Long" >-->
+    <!--    select-->
+    <!--    <include refid="Base_Column_List" />-->
+    <!--    from stream_task-->
+    <!--    where id = #{id,jdbcType=BIGINT}-->
+    <!--  </select>-->
+
+    <!-- 条件筛选 -->
+    <select id="selectByParam" resultType="com.intellif.vesionbook.srstask.model.entity.StreamTask"
+            parameterType="com.intellif.vesionbook.srstask.model.dto.StreamTaskDto">
+        select
+        <include refid="Base_Column_List"/>
+        from stream_task
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id,jdbcType=BIGINT}
+            </if>
+            <if test="origin != null and origin != ''">
+                and origin = #{origin,jdbcType=VARCHAR}
+            </if>
+            <if test="app != null and app != ''">
+                and app = #{app,jdbcType=VARCHAR}
+            </if>
+            <if test="uniqueId != null and uniqueId != ''">
+                and unique_id = #{uniqueId,jdbcType=VARCHAR}
+            </if>
+            <if test="service != null and service != ''">
+                and service = #{service,jdbcType=VARCHAR}
+            </if>
+            <if test="rtmpOutput != null and rtmpOutput != ''">
+                and rtmp_output = #{rtmpOutput,jdbcType=VARCHAR}
+            </if>
+            <if test="httpFlvOutput != null and httpFlvOutput != ''">
+                and http_flv_output = #{httpFlvOutput,jdbcType=VARCHAR}
+            </if>
+            <if test="hlsOutput != null and hlsOutput != ''">
+                and hls_output = #{hlsOutput,jdbcType=VARCHAR}
+            </if>
+            <if test="webrtcOutput != null and webrtcOutput != ''">
+                and webrtc_output = #{webrtcOutput,jdbcType=VARCHAR}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status,jdbcType=INTEGER}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                and create_time = #{createTime,jdbcType=TIMESTAMP}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                and update_time = #{updateTime,jdbcType=TIMESTAMP}
+            </if>
+        </where>
+        <if test="lock == true">
+            for update
+        </if>
+
+    </select>
+
+    <!--  <insert id="insertSelective" parameterType="com.intellif.vesionbook.building.model.PersonGroupRelation" useGeneratedKeys="true" keyProperty="id" >-->
+    <!--    insert into t_person_group_relation-->
+    <!--    <trim prefix="(" suffix=")" suffixOverrides="," >-->
+    <!--      <if test="id != null" >-->
+    <!--        id,-->
+    <!--      </if>-->
+    <!--      <if test="uniqueId != null" >-->
+    <!--        unique_id,-->
+    <!--      </if>-->
+    <!--      <if test="groupId != null" >-->
+    <!--        group_id,-->
+    <!--      </if>-->
+    <!--      <if test="created != null" >-->
+    <!--        created,-->
+    <!--      </if>-->
+    <!--      <if test="updated != null" >-->
+    <!--        updated,-->
+    <!--      </if>-->
+    <!--      <if test="creator != null" >-->
+    <!--        creator,-->
+    <!--      </if>-->
+    <!--      <if test="updater != null" >-->
+    <!--        updater,-->
+    <!--      </if>-->
+    <!--      <if test="deleted != null" >-->
+    <!--        deleted,-->
+    <!--      </if>-->
+    <!--      <if test="authorId != null" >-->
+    <!--        author_id,-->
+    <!--      </if>-->
+    <!--    </trim>-->
+    <!--    <trim prefix="values (" suffix=")" suffixOverrides="," >-->
+    <!--      <if test="id != null" >-->
+    <!--        #{id,jdbcType=BIGINT},-->
+    <!--      </if>-->
+    <!--      <if test="uniqueId != null and uniqueId != ''" >-->
+    <!--        #{uniqueId,jdbcType=VARCHAR},-->
+    <!--      </if>-->
+    <!--      <if test="groupId != null" >-->
+    <!--        #{groupId,jdbcType=BIGINT},-->
+    <!--      </if>-->
+    <!--      <if test="created != null" >-->
+    <!--        #{created,jdbcType=TIMESTAMP},-->
+    <!--      </if>-->
+    <!--      <if test="updated != null" >-->
+    <!--        #{updated,jdbcType=TIMESTAMP},-->
+    <!--      </if>-->
+    <!--      <if test="creator != null" >-->
+    <!--        #{creator,jdbcType=VARCHAR},-->
+    <!--      </if>-->
+    <!--      <if test="updater != null" >-->
+    <!--        #{updater,jdbcType=VARCHAR},-->
+    <!--      </if>-->
+    <!--      <if test="deleted != null" >-->
+    <!--        #{deleted,jdbcType=TINYINT},-->
+    <!--      </if>-->
+    <!--      <if test="authorId != null" >-->
+    <!--        #{authorId,jdbcType=BIGINT},-->
+    <!--      </if>-->
+    <!--    </trim>-->
+    <!--  </insert>-->
+    <!--  <update id="updateByPrimaryKeySelective" parameterType="com.intellif.vesionbook.building.model.PersonGroupRelation" >-->
+    <!--    update t_person_group_relation-->
+    <!--    <set >-->
+    <!--      <if test="uniqueId != null" >-->
+    <!--        unique_id = #{uniqueId,jdbcType=VARCHAR},-->
+    <!--      </if>-->
+    <!--      <if test="groupId != null" >-->
+    <!--        group_id = #{groupId,jdbcType=BIGINT},-->
+    <!--      </if>-->
+    <!--      <if test="created != null" >-->
+    <!--        created = #{created,jdbcType=TIMESTAMP},-->
+    <!--      </if>-->
+    <!--      <if test="updated != null" >-->
+    <!--        updated = #{updated,jdbcType=TIMESTAMP},-->
+    <!--      </if>-->
+    <!--      <if test="creator != null" >-->
+    <!--        creator = #{creator,jdbcType=VARCHAR},-->
+    <!--      </if>-->
+    <!--      <if test="updater != null" >-->
+    <!--        updater = #{updater,jdbcType=VARCHAR},-->
+    <!--      </if>-->
+    <!--      <if test="deleted != null" >-->
+    <!--        deleted = #{deleted,jdbcType=TINYINT},-->
+    <!--      </if>-->
+    <!--      <if test="authorId != null" >-->
+    <!--        author_id = #{authorId,jdbcType=BIGINT},-->
+    <!--      </if>-->
+    <!--    </set>-->
+    <!--    where id = #{id,jdbcType=BIGINT}-->
+    <!--  </update>-->
+
+</mapper>
