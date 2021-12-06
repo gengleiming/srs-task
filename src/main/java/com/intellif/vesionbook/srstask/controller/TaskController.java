@@ -3,6 +3,7 @@ package com.intellif.vesionbook.srstask.controller;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
 import com.intellif.vesionbook.srstask.model.vo.req.CreateTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.DestroyTaskReqVo;
+import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import io.swagger.annotations.Api;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,19 +22,17 @@ public class TaskController {
 
     @Operation(summary = "创建流任务")
     @PostMapping("/create/stream/task")
-    public BaseResponseVo<String> createStreamTask(@RequestBody CreateTaskReqVo createTaskReqVo) {
+    public BaseResponseVo<CreateTaskRspVo> createStreamTask(@RequestBody CreateTaskReqVo createTaskReqVo) {
         String originUrl = "rtsp://admin:intellif123@192.168.18.5/live/livestream";
         createTaskReqVo.setOriginStream(originUrl);
-        taskService.createStreamTask(createTaskReqVo);
-        return BaseResponseVo.ok();
+        return taskService.createStreamTask(createTaskReqVo);
     }
 
     @Operation(summary = "关闭流任务")
-    @PostMapping("/destroy/stream/task")
+    @PostMapping("/delete/stream/task")
     public BaseResponseVo<String> destroyStreamTask(@RequestBody DestroyTaskReqVo destroyTaskReqVo) {
         String originUrl = "rtsp://admin:intellif123@192.168.18.5/live/livestream";
         destroyTaskReqVo.setOriginStream(originUrl);
-        taskService.destroyStreamTask(destroyTaskReqVo);
-        return BaseResponseVo.ok();
+        return taskService.deleteStreamTask(destroyTaskReqVo);
     }
 }

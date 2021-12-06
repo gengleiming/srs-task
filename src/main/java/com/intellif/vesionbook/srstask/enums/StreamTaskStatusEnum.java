@@ -10,6 +10,7 @@ public enum StreamTaskStatusEnum {
     CLOSED(3, "已关闭"),
 
     DISCONNECT(4, "未连接到服务器"),
+    PRE_CLOSED(5, "准备关闭"),
     ;
 
     private final int code;

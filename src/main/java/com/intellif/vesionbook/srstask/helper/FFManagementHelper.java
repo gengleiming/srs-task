@@ -28,7 +28,7 @@ public class FFManagementHelper {
      * @author zxzhang
      * @date 2019/12/10
      */
-    public Process transcodeToHlvAndRTC(String originUrl, String app, String uniqueId) {
+    public Process transcodeToRtmpAndHlvAndRTC(String originUrl, String app, String uniqueId) {
         String pushUrl = "rtmp://" + srsConfig.getSrsUrl() + "/" + app + "/" + uniqueId;
         //拉流推流，视频转码
         LinkedList<String> ffmpegCmdList = new LinkedList<>();
@@ -53,6 +53,9 @@ public class FFManagementHelper {
         Process ffmpeg;
         try {
             ffmpeg = builder.start();
+            System.out.println("---------");
+            System.out.println(ffmpeg.isAlive());
+            System.out.println(ffmpeg);
         } catch (IOException e) {
             e.printStackTrace();
             return null;

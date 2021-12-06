@@ -1,13 +1,15 @@
 package com.intellif.vesionbook.srstask.model.entity;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 public class StreamTask {
     private Long id;
-    private String origin;
+    private String originStream;
     private String app;
     private String uniqueId;
     private String service;

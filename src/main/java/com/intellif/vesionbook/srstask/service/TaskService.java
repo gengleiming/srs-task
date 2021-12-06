@@ -9,6 +9,6 @@ import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
 public interface TaskService {
 
     BaseResponseVo<CreateTaskRspVo> createStreamTask(CreateTaskReqVo createTaskReqVo);
-    void destroyStreamTask(DestroyTaskReqVo destroyTaskReqVo);
+    BaseResponseVo<String> deleteStreamTask(DestroyTaskReqVo destroyTaskReqVo);
 
 }

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Builder
 public class StreamTaskDto {
     private Long id;
-    private String origin;
+    private String originStream;
     private String app;
     private String uniqueId;
     private String service;

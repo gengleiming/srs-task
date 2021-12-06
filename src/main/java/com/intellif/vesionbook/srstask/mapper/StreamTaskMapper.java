@@ -11,4 +11,6 @@ import java.util.List;
 public interface StreamTaskMapper {
 
     List<StreamTask> selectByParam(StreamTaskDto streamTaskDto);
+    void insertSelective(StreamTask streamTask);
+    void updateStatus(StreamTask streamTask);
 }
