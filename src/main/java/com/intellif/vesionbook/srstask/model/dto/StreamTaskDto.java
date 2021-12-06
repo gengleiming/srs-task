@@ -13,8 +13,10 @@ public class StreamTaskDto {
     private String app;
     private String uniqueId;
     private String service;
-    private Integer outputTypes;
-    private String outputStream;
+    private String rtmpOutput;
+    private String httpFlvOutput;
+    private String hlsOutput;
+    private String webrtcOutput;
     private Integer status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

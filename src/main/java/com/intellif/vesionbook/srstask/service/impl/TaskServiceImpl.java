@@ -1,7 +1,6 @@
 package com.intellif.vesionbook.srstask.service.impl;
 
 import com.intellif.vesionbook.srstask.cache.StreamTaskCache;
-import com.intellif.vesionbook.srstask.config.ServerConfig;
 import com.intellif.vesionbook.srstask.enums.ReturnCodeEnum;
 import com.intellif.vesionbook.srstask.enums.StreamOutputTypeEnum;
 import com.intellif.vesionbook.srstask.enums.StreamTaskStatusEnum;
@@ -17,6 +16,7 @@ import com.intellif.vesionbook.srstask.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -33,9 +33,6 @@ public class TaskServiceImpl implements TaskService {
     @Resource
     StreamTaskMapper streamTaskMapper;
 
-    @Resource
-    ServerConfig serverConfig;
-
     @Override
     @Transactional
     public BaseResponseVo<CreateTaskRspVo> createStreamTask(CreateTaskReqVo createTaskReqVo) {
@@ -45,60 +42,44 @@ public class TaskServiceImpl implements TaskService {
         String originStream = createTaskReqVo.getOriginStream();
         Integer outputType = createTaskReqVo.getOutputType();
 
-        BaseResponseVo<CreateTaskRspVo> outputStream = getStreamByOutputType(app, uniqueId, outputType);
-        if(outputStream != null) {
-            return outputStream;
+        StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId).origin(originStream).lock(true).build();
+        List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
+
+        if(streamTasks!=null){
+            streamTasks = streamTasks.stream().filter(item -> item.getStatus() != StreamTaskStatusEnum.CLOSED.getCode()).collect(Collectors.toList());
+            if(streamTasks.size()>1) {
+                return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_REPEAT);
+            }
+            if(streamTasks.size()==1) {
+                StreamTask task = streamTasks.get(0);
+                CreateTaskRspVo vo;
+                if(outputType == StreamOutputTypeEnum.RTMP.getCode() && !StringUtils.isEmpty(task.getRtmpOutput())){
+                    vo = CreateTaskRspVo.builder().rtmpOutput(task.getRtmpOutput()).build();
+                    return BaseResponseVo.ok(vo);
+                }
+                if (outputType == StreamOutputTypeEnum.HTTP_HLV.getCode() && !StringUtils.isEmpty(task.getHttpFlvOutput())){
+                    vo = CreateTaskRspVo.builder().rtmpOutput(task.getRtmpOutput()).build();
+                    return BaseResponseVo.ok(vo);
+                }
+                if (outputType == StreamOutputTypeEnum.HLS.getCode() && !StringUtils.isEmpty(task.getHlsOutput())){
+                    vo = CreateTaskRspVo.builder().rtmpOutput(task.getRtmpOutput()).build();
+                    return BaseResponseVo.ok(vo);
+                }
+                if (outputType == StreamOutputTypeEnum.WEB_RTC.getCode() && !StringUtils.isEmpty(task.getWebrtcOutput())){
+                    vo = CreateTaskRspVo.builder().rtmpOutput(task.getRtmpOutput()).build();
+                    return BaseResponseVo.ok(vo);
+                }
+            }
         }
 
         Process ffmpeg;
-        if(outputType == StreamOutputTypeEnum.HTTP_HLV.getCode() || outputType == StreamOutputTypeEnum.WEB_RTC.getCode()
-                || outputType == StreamOutputTypeEnum.RTMP.getCode()) {
-            ffmpeg = ffManagementHelper.transcodeToRtmpAndHlvAndRTC(originStream, app, uniqueId);
-            // 缓存process
-            StreamTaskCache.storeProcess(app, uniqueId, ffmpeg);
-
-            Integer outputTypes = StreamOutputTypeEnum.RTMP.getCode() | StreamOutputTypeEnum.HTTP_HLV.getCode() | StreamOutputTypeEnum.WEB_RTC.getCode();
-            StreamTask streamTask = new StreamTask();
-            streamTask.setApp(app);
-            streamTask.setUniqueId(uniqueId);
-            streamTask.setOriginStream(originStream);
-            streamTask.setOutputTypes(outputTypes);
-            streamTask.setService(serverConfig.getServiceHost());
-
-            streamTask.setService(serverConfig.getServiceHost());
-
-
+        if(outputType == StreamOutputTypeEnum.HTTP_HLV.getCode() || outputType == StreamOutputTypeEnum.WEB_RTC.getCode()) {
+            ffmpeg = ffManagementHelper.transcodeToHlvAndRTC(originStream, app, uniqueId);
         } else {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_TYPE_NOT_SUPPORT);
         }
         StreamTaskCache.taskMap.put(app + "-" + uniqueId, ffmpeg);
         return BaseResponseVo.ok();
-    }
-
-    public BaseResponseVo<CreateTaskRspVo> getStreamByOutputType(String app, String uniqueId, Integer outputType) {
-        StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId).lock(true).build();
-        List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
-
-        if(streamTasks==null){
-            return null;
-        }
-
-        streamTasks = streamTasks.stream().filter(
-                item -> item.getStatus() != StreamTaskStatusEnum.CLOSED.getCode() &&
-                (item.getOutputTypes()&outputType)==outputType).collect(Collectors.toList());
-
-        if(streamTasks.size()==0){
-            return null;
-        }
-
-        if(streamTasks.size()>1) {
-            log.error("流任务重复: {}", streamTasks);
-            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_REPEAT);
-        }
-
-        StreamTask task = streamTasks.get(0);
-        CreateTaskRspVo vo = CreateTaskRspVo.builder().outputType(outputType).outputStream(task.getOutputStream()).build();
-        return BaseResponseVo.ok(vo);
     }
 
     @Override

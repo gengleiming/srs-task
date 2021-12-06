@@ -22,8 +22,8 @@
             <if test="id != null and id != ''">
                 and id = #{id,jdbcType=BIGINT}
             </if>
-            <if test="originStream != null and originStream != ''">
-                and origin_stream = #{originStream,jdbcType=VARCHAR}
+            <if test="origin != null and origin != ''">
+                and origin = #{origin,jdbcType=VARCHAR}
             </if>
             <if test="app != null and app != ''">
                 and app = #{app,jdbcType=VARCHAR}
@@ -34,11 +34,17 @@
             <if test="service != null and service != ''">
                 and service = #{service,jdbcType=VARCHAR}
             </if>
-            <if test="outputTypes != null and outputTypes != ''">
-                and output_types = #{outputTypes,jdbcType=Integer}
+            <if test="rtmpOutput != null and rtmpOutput != ''">
+                and rtmp_output = #{rtmpOutput,jdbcType=VARCHAR}
             </if>
-            <if test="outputStream != null and outputStream != ''">
-                and output_stream = #{outputStream,jdbcType=VARCHAR}
+            <if test="httpFlvOutput != null and httpFlvOutput != ''">
+                and http_flv_output = #{httpFlvOutput,jdbcType=VARCHAR}
+            </if>
+            <if test="hlsOutput != null and hlsOutput != ''">
+                and hls_output = #{hlsOutput,jdbcType=VARCHAR}
+            </if>
+            <if test="webrtcOutput != null and webrtcOutput != ''">
+                and webrtc_output = #{webrtcOutput,jdbcType=VARCHAR}
             </if>
             <if test="status != null and status != ''">
                 and status = #{status,jdbcType=INTEGER}
@@ -56,61 +62,67 @@
 
     </select>
 
-      <insert id="insertSelective" parameterType="com.intellif.vesionbook.srstask.model.entity.StreamTask" useGeneratedKeys="true" keyProperty="id" >
-        insert into stream_task
-        <trim prefix="(" suffix=")" suffixOverrides="," >
-            <if test="id != null and id != ''">
-                and id = #{id,jdbcType=BIGINT}
-            </if>
-            <if test="origin != null and origin != ''">
-                and origin = #{origin,jdbcType=VARCHAR}
-            </if>
-            <if test="app != null and app != ''">
-                and app = #{app,jdbcType=VARCHAR}
-            </if>
-            <if test="uniqueId != null and uniqueId != ''">
-                and unique_id = #{uniqueId,jdbcType=VARCHAR}
-            </if>
-            <if test="service != null and service != ''">
-                and service = #{service,jdbcType=VARCHAR}
-            </if>
-            <if test="outputTypes != null and outputTypes != ''">
-                and output_types = #{outputTypes,jdbcType=Integer}
-            </if>
-            <if test="outputStream != null and outputStream != ''">
-                and output_stream = #{outputStream,jdbcType=VARCHAR}
-            </if>
-            <if test="status != null and status != ''">
-                and status = #{status,jdbcType=INTEGER}
-            </if>
-        </trim>
-        <trim prefix="values (" suffix=")" suffixOverrides="," >
-            <if test="id != null and id != ''">
-                and id = #{id,jdbcType=BIGINT}
-            </if>
-            <if test="origin != null and origin != ''">
-                and origin = #{origin,jdbcType=VARCHAR}
-            </if>
-            <if test="app != null and app != ''">
-                and app = #{app,jdbcType=VARCHAR}
-            </if>
-            <if test="uniqueId != null and uniqueId != ''">
-                and unique_id = #{uniqueId,jdbcType=VARCHAR}
-            </if>
-            <if test="service != null and service != ''">
-                and service = #{service,jdbcType=VARCHAR}
-            </if>
-            <if test="outputType != null and outputType != ''">
-                and output_type = #{outputType,jdbcType=Integer}
-            </if>
-            <if test="outputStream != null and outputStream != ''">
-                and output_stream = #{outputStream,jdbcType=VARCHAR}
-            </if>
-            <if test="status != null and status != ''">
-                and status = #{status,jdbcType=INTEGER}
-            </if>
-        </trim>
-      </insert>
+    <!--  <insert id="insertSelective" parameterType="com.intellif.vesionbook.building.model.PersonGroupRelation" useGeneratedKeys="true" keyProperty="id" >-->
+    <!--    insert into t_person_group_relation-->
+    <!--    <trim prefix="(" suffix=")" suffixOverrides="," >-->
+    <!--      <if test="id != null" >-->
+    <!--        id,-->
+    <!--      </if>-->
+    <!--      <if test="uniqueId != null" >-->
+    <!--        unique_id,-->
+    <!--      </if>-->
+    <!--      <if test="groupId != null" >-->
+    <!--        group_id,-->
+    <!--      </if>-->
+    <!--      <if test="created != null" >-->
+    <!--        created,-->
+    <!--      </if>-->
+    <!--      <if test="updated != null" >-->
+    <!--        updated,-->
+    <!--      </if>-->
+    <!--      <if test="creator != null" >-->
+    <!--        creator,-->
+    <!--      </if>-->
+    <!--      <if test="updater != null" >-->
+    <!--        updater,-->
+    <!--      </if>-->
+    <!--      <if test="deleted != null" >-->
+    <!--        deleted,-->
+    <!--      </if>-->
+    <!--      <if test="authorId != null" >-->
+    <!--        author_id,-->
+    <!--      </if>-->
+    <!--    </trim>-->
+    <!--    <trim prefix="values (" suffix=")" suffixOverrides="," >-->
+    <!--      <if test="id != null" >-->
+    <!--        #{id,jdbcType=BIGINT},-->
+    <!--      </if>-->
+    <!--      <if test="uniqueId != null and uniqueId != ''" >-->
+    <!--        #{uniqueId,jdbcType=VARCHAR},-->
+    <!--      </if>-->
+    <!--      <if test="groupId != null" >-->
+    <!--        #{groupId,jdbcType=BIGINT},-->
+    <!--      </if>-->
+    <!--      <if test="created != null" >-->
+    <!--        #{created,jdbcType=TIMESTAMP},-->
+    <!--      </if>-->
+    <!--      <if test="updated != null" >-->
+    <!--        #{updated,jdbcType=TIMESTAMP},-->
+    <!--      </if>-->
+    <!--      <if test="creator != null" >-->
+    <!--        #{creator,jdbcType=VARCHAR},-->
+    <!--      </if>-->
+    <!--      <if test="updater != null" >-->
+    <!--        #{updater,jdbcType=VARCHAR},-->
+    <!--      </if>-->
+    <!--      <if test="deleted != null" >-->
+    <!--        #{deleted,jdbcType=TINYINT},-->
+    <!--      </if>-->
+    <!--      <if test="authorId != null" >-->
+    <!--        #{authorId,jdbcType=BIGINT},-->
+    <!--      </if>-->
+    <!--    </trim>-->
+    <!--  </insert>-->
     <!--  <update id="updateByPrimaryKeySelective" parameterType="com.intellif.vesionbook.building.model.PersonGroupRelation" >-->
     <!--    update t_person_group_relation-->
     <!--    <set >-->

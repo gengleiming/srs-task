@@ -8,7 +8,9 @@ import lombok.Data;
 @Schema(name = "创建视频流返回体")
 @Builder
 public class CreateTaskRspVo {
-    private Integer outputType;
-    private String outputStream;
+    private String rtmpOutput;
+    private String httpFlvOutput;
+    private String hlsOutput;
+    private String webrtcOutput;
     private Integer status;
 }

@@ -7,9 +7,9 @@ public enum StreamOutputTypeEnum {
 
     HTTP_HLV(2, "http-hlv"),
 
-    HLS(4, "hls"),
+    HLS(3, "hls"),
 
-    WEB_RTC(8, "WebRTC"),
+    WEB_RTC(4, "WebRTC"),
     ;
 
     private final int code;

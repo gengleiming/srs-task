@@ -22,13 +22,13 @@ public class FFManagementHelper {
     @Resource
     private SRSConfig srsConfig;
     /**
-     * 拉流推流，分发rtmp，HTTP-Hlv和WebRTC地址
+     * 拉流推流，分发HTTP-Hlv和WebRTC地址
      * @param originUrl 拉流源地址
      * @return
      * @author zxzhang
      * @date 2019/12/10
      */
-    public Process transcodeToRtmpAndHlvAndRTC(String originUrl, String app, String uniqueId) {
+    public Process transcodeToHlvAndRTC(String originUrl, String app, String uniqueId) {
         String pushUrl = "rtmp://" + srsConfig.getSrsUrl() + "/" + app + "/" + uniqueId;
         //拉流推流，视频转码
         LinkedList<String> ffmpegCmdList = new LinkedList<>();
