@@ -10,18 +10,16 @@ import com.intellif.vesionbook.srstask.mapper.StreamTaskMapper;
 import com.intellif.vesionbook.srstask.model.dto.StreamTaskDto;
 import com.intellif.vesionbook.srstask.model.entity.StreamTask;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
-import com.intellif.vesionbook.srstask.model.vo.req.CreateTaskReqVo;
-import com.intellif.vesionbook.srstask.model.vo.req.DestroyTaskReqVo;
+import com.intellif.vesionbook.srstask.model.vo.req.GetOrCreateTaskReqVo;
+import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.jni.Time;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,103 +39,98 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public BaseResponseVo<CreateTaskRspVo> createStreamTask(CreateTaskReqVo createTaskReqVo) {
+    public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(GetOrCreateTaskReqVo getOrCreateTaskReqVo) {
 
-        String app = createTaskReqVo.getApp();
-        String uniqueId = createTaskReqVo.getUniqueId();
-        String originStream = createTaskReqVo.getOriginStream();
-        Integer outputType = createTaskReqVo.getOutputType();
+        String app = getOrCreateTaskReqVo.getApp();
+        String uniqueId = getOrCreateTaskReqVo.getUniqueId();
+        String originStream = getOrCreateTaskReqVo.getOriginStream();
+        Integer outputType = getOrCreateTaskReqVo.getOutputType();
 
-        if(outputType != StreamOutputTypeEnum.RTMP.getCode() && outputType != StreamOutputTypeEnum.HTTP_HLV.getCode()
+        if (outputType != StreamOutputTypeEnum.RTMP.getCode() && outputType != StreamOutputTypeEnum.HTTP_HLV.getCode()
                 && outputType != StreamOutputTypeEnum.WEB_RTC.getCode()) {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_TYPE_NOT_SUPPORT);
         }
 
-        BaseResponseVo<CreateTaskRspVo> ret = getStreamAddress(app, uniqueId, outputType);
-        if (ret != null) {
-            return ret;
+        BaseResponseVo<StreamTask> ret = getStreamTask(app, uniqueId, true);
+        if (ret != null && !ret.isSuccess()) {
+            return BaseResponseVo.error(ret.getRespCode(), ret.getRespMark(), ret.getRespMessage());
         }
 
-        Process ffmpeg = ffManagementHelper.transcodeToRtmpAndHlvAndRTC(originStream, app, uniqueId);
-        StreamTaskCache.storeProcess(app, uniqueId, ffmpeg);
+        if (ret != null && ret.isSuccess()) {
+            StreamTask task = ret.getData();
+            Process process = StreamTaskCache.getProcess(task.getApp(), task.getUniqueId());
+            log.info("app: {}, unique id: {}, process is null: {}, process is alive: {}", app, uniqueId,
+                    process == null, process != null && process.isAlive());
+            if (process != null && process.isAlive()) {
+                return getStreamAddress(task, outputType);
+            }
+        }
 
+        // 创建任务
+        Process ffmpeg = ffManagementHelper.transcodeToRtmpAndHlvAndRTC(originStream, app, uniqueId);
+        if (ffmpeg == null) {
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_FAILED);
+        }
+
+        // 缓存ffmpeg对象
+        StreamTaskCache.storeProcess(app, uniqueId, ffmpeg);
 
         String rtmpOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.RTMP.getCode());
         String httpFlvOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.HTTP_HLV.getCode());
         String webrtcOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.WEB_RTC.getCode());
-
         StreamTask task = StreamTask.builder().app(app).uniqueId(uniqueId).originStream(originStream)
                 .service(serverConfig.getServiceHost()).status(StreamTaskStatusEnum.INIT.getCode())
                 .rtmpOutput(rtmpOutput).httpFlvOutput(httpFlvOutput).webrtcOutput(webrtcOutput).build();
 
-        log.info("task: {}", task);
-
-        streamTaskMapper.insertSelective(task);
-
-        CreateTaskRspVo vo;
-        if(outputType == StreamOutputTypeEnum.RTMP.getCode()){
-            vo = CreateTaskRspVo.builder().rtmpOutput(rtmpOutput).build();
-        } else if (outputType == StreamOutputTypeEnum.HTTP_HLV.getCode()){
-            vo = CreateTaskRspVo.builder().rtmpOutput(httpFlvOutput).build();
-        } else {
-            vo = CreateTaskRspVo.builder().rtmpOutput(webrtcOutput).build();
+        if (ret == null) {
+            streamTaskMapper.insertSelective(task);
         }
-        log.info("start");
-        return BaseResponseVo.ok(vo);
+
+        return getStreamAddress(task, outputType);
     }
 
     public String getOutputStream(String app, String uniqueId, Integer outputType) {
         String output;
-        if(outputType == StreamOutputTypeEnum.RTMP.getCode()) {
-            output = "rtmp://" + serverConfig.getOutputHost() +"/" + app + "/" + uniqueId;
-        } else if (outputType == StreamOutputTypeEnum.HTTP_HLV.getCode()){
+        if (outputType == StreamOutputTypeEnum.RTMP.getCode()) {
+            output = "rtmp://" + serverConfig.getOutputHost() + "/" + app + "/" + uniqueId;
+        } else if (outputType == StreamOutputTypeEnum.HTTP_HLV.getCode()) {
             output = "http://" + serverConfig.getOutputHost() + ":" + serverConfig.getHttpFlvPort() + "/" + app + "/" + uniqueId + ".flv";
-        } else if (outputType == StreamOutputTypeEnum.WEB_RTC.getCode()){
-            output = "webrtc://" + serverConfig.getOutputHost() +"/" + app + "/" + uniqueId;
+        } else if (outputType == StreamOutputTypeEnum.WEB_RTC.getCode()) {
+            output = "webrtc://" + serverConfig.getOutputHost() + "/" + app + "/" + uniqueId;
         } else {
             return null;
         }
         return output;
     }
 
-    public BaseResponseVo<CreateTaskRspVo> getStreamAddress(String app, String uniqueId, Integer outputType) {
-        BaseResponseVo<StreamTask> ret = getStreamTask(app, uniqueId, true);
-        if(ret == null){
-            return null;
-        }
-        if(!ret.isSuccess()) {
-            return BaseResponseVo.error(ret.getRespCode(), ret.getRespMark(), ret.getRespMessage());
-        }
-        StreamTask task = ret.getData();
-
+    public BaseResponseVo<CreateTaskRspVo> getStreamAddress(StreamTask task, Integer outputType) {
 
         CreateTaskRspVo vo;
-        if(outputType == StreamOutputTypeEnum.RTMP.getCode() && !StringUtils.isEmpty(task.getRtmpOutput())){
+        if (outputType == StreamOutputTypeEnum.RTMP.getCode() && !StringUtils.isEmpty(task.getRtmpOutput())) {
             vo = CreateTaskRspVo.builder().rtmpOutput(task.getRtmpOutput()).build();
-        } else if (outputType == StreamOutputTypeEnum.HTTP_HLV.getCode() && !StringUtils.isEmpty(task.getHttpFlvOutput())){
-            vo = CreateTaskRspVo.builder().rtmpOutput(task.getRtmpOutput()).build();
-        } else if (outputType == StreamOutputTypeEnum.WEB_RTC.getCode() && !StringUtils.isEmpty(task.getWebrtcOutput())){
-            vo = CreateTaskRspVo.builder().rtmpOutput(task.getRtmpOutput()).build();
+        } else if (outputType == StreamOutputTypeEnum.HTTP_HLV.getCode() && !StringUtils.isEmpty(task.getHttpFlvOutput())) {
+            vo = CreateTaskRspVo.builder().httpFlvOutput(task.getHttpFlvOutput()).build();
+        } else if (outputType == StreamOutputTypeEnum.WEB_RTC.getCode() && !StringUtils.isEmpty(task.getWebrtcOutput())) {
+            vo = CreateTaskRspVo.builder().webrtcOutput(task.getWebrtcOutput()).build();
         } else {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_TYPE_NOT_SUPPORT);
         }
         return BaseResponseVo.ok(vo);
-
     }
 
     public BaseResponseVo<StreamTask> getStreamTask(String app, String uniqueId, Boolean lock) {
         StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId).lock(lock).build();
         List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
-        if(streamTasks==null) {
+        if (streamTasks == null) {
             return null;
         }
 
         streamTasks = streamTasks.stream().filter(item -> item.getStatus() != StreamTaskStatusEnum.CLOSED.getCode()).collect(Collectors.toList());
-        if(streamTasks.size()>1) {
+        if (streamTasks.size() > 1) {
             log.error("发现重复的流任务 stream tasks: {}", streamTasks);
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_REPEAT);
         }
-        if(streamTasks.size()==0) {
+        if (streamTasks.size() == 0) {
             return null;
         }
 
@@ -147,25 +140,25 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public BaseResponseVo<String> deleteStreamTask(DestroyTaskReqVo destroyTaskReqVo) {
-        String app = destroyTaskReqVo.getApp();
-        String uniqueId = destroyTaskReqVo.getUniqueId();
-        String originStream = destroyTaskReqVo.getOriginStream();
+    public BaseResponseVo<String> closeStreamTask(CloseTaskReqVo closeTaskReqVo) {
+        String app = closeTaskReqVo.getApp();
+        String uniqueId = closeTaskReqVo.getUniqueId();
+        String originStream = closeTaskReqVo.getOriginStream();
 
         BaseResponseVo<StreamTask> ret = getStreamTask(app, uniqueId, true);
-        if(ret == null) {
+        if (ret == null) {
             log.error("数据库未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_DATABASE_NOT_FOUND);
         }
-        if(!ret.isSuccess()) {
+        if (!ret.isSuccess()) {
             return BaseResponseVo.error(ret.getRespCode(), ret.getRespMark(), ret.getRespMessage());
         }
         Process process = StreamTaskCache.getProcess(app, uniqueId);
-        if(process == null) {
+        if (process == null) {
             log.error("缓存中未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
-            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_DATABASE_NOT_FOUND);
+        } else {
+            process.destroy();
         }
-        process.destroy();
 
         // 关闭
         StreamTask task = StreamTask.builder().app(app).uniqueId(uniqueId).status(StreamTaskStatusEnum.CLOSED.getCode()).build();

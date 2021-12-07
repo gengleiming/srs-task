@@ -8,6 +8,7 @@ import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @description: 视频转码
@@ -40,6 +41,7 @@ public class FFManagementHelper {
         ffmpegCmdList.add("-i");
         ffmpegCmdList.add(originUrl);
         ffmpegCmdList.add("-vcodec");
+        ffmpegCmdList.add("xxx");
         ffmpegCmdList.add("copy");
         ffmpegCmdList.add("-acodec");
         ffmpegCmdList.add("aac");
@@ -53,9 +55,6 @@ public class FFManagementHelper {
         Process ffmpeg;
         try {
             ffmpeg = builder.start();
-            System.out.println("---------");
-            System.out.println(ffmpeg.isAlive());
-            System.out.println(ffmpeg);
         } catch (IOException e) {
             e.printStackTrace();
             return null;

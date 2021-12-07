@@ -22,6 +22,9 @@ public enum ReturnCodeEnum {
     ERROR_STREAM_TASK_TYPE_NOT_SUPPORT(90000003, "stream task type not support", "暂不支持的分发格式"),
     ERROR_STREAM_TASK_DATABASE_NOT_FOUND(90000004, "stream task database not found", "数据库未发现该流任务，请稍后再试"),
     ERROR_STREAM_TASK_CACHE_NOT_FOUND(90000005, "stream task cache not found", "缓存未发现该流任务，请稍后再试"),
+    ERROR_STREAM_TASK_FAILED(90000006, "stream task failed", "流任务执行失败"),
+    ERROR_STREAM_TASK_NOT_ALIVE(90000007, "stream task not alive", "流任务不在存活状态"),
+    ERROR_STREAM_TASK_NONE(90000008, "stream task none", "流任务不存在"),
     ;
 
     private final int resultCode;

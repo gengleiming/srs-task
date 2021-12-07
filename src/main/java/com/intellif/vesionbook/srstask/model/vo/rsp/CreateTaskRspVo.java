@@ -12,5 +12,4 @@ public class CreateTaskRspVo {
     private String httpFlvOutput;
     private String hlsOutput;
     private String webrtcOutput;
-    private Integer status;
 }

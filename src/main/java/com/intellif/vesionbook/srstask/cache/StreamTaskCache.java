@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StreamTaskCache {
     public static ConcurrentHashMap<String, Process> taskMap = new ConcurrentHashMap<>();
 
-    public static String getTaskKey(String app, String uniqueId) {
+    private static String getTaskKey(String app, String uniqueId) {
         return "stream_task_" + app + "_" + uniqueId;
     }
 
