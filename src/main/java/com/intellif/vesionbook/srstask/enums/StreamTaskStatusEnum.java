@@ -3,14 +3,8 @@ package com.intellif.vesionbook.srstask.enums;
 
 public enum StreamTaskStatusEnum {
 
-    INIT(1, "创建中"),
-
-    PROCESSING(2, "运行中"),
-
-    CLOSED(3, "已关闭"),
-
-    DISCONNECT(4, "未连接到服务器"),
-    PRE_CLOSED(5, "准备关闭"),
+    PROCESSING(1, "运行中"),
+    CLOSED(2, "已关闭"),
     ;
 
     private final int code;

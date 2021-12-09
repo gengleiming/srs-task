@@ -1,17 +1,22 @@
 package com.intellif.vesionbook.srstask.model.vo.req;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 @Data
-@Schema(name = "创建流任务请求体")
 public class GetOrCreateTaskReqVo {
-    @Schema(name = "应用app", required = true, description = "一级app")
+    @ApiModelProperty(value = "应用ID", required = true, example = "garden")
     private String app;
-    @Schema(name = "stream唯一id", required = true, description = "一级stream")
+
+    @ApiModelProperty(value = "源设备ID", required = true, example = "device1")
     private String uniqueId;
-    @Schema(name = "拉流地址", required = true, description = "拉流地址")
+
+    @ApiModelProperty(value = "源", required = true, example = "rtsp://admin:intellif123@192.168.18.5/live/livestream")
     private String originStream;
-    @Schema(name = "分发类型", required = true, description = "1:rtmp 2:http-hlv 3:hls 4:WebRTC")
+
+    @ApiModelProperty(value = "分发类型 1:rtmp 2:http-hlv 3:hls 4:WebRTC", required = true, example = "4")
     private Integer outputType;
+
+    @ApiModelProperty(value = "永久视频流", example = "false")
+    private Boolean forever;
 }

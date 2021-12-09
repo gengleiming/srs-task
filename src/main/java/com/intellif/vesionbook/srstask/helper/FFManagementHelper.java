@@ -29,19 +29,14 @@ public class FFManagementHelper {
      * @author zxzhang
      * @date 2019/12/10
      */
-    public Process transcodeToRtmpAndHlvAndRTC(String originUrl, String app, String uniqueId) {
+    public Process transcodeStream(String originUrl, String app, String uniqueId) {
         String pushUrl = "rtmp://" + srsConfig.getSrsUrl() + "/" + app + "/" + uniqueId;
         //拉流推流，视频转码
         LinkedList<String> ffmpegCmdList = new LinkedList<>();
-        ffmpegCmdList.add("nohup");
         ffmpegCmdList.add("ffmpeg");
-        ffmpegCmdList.add("-re");
-        ffmpegCmdList.add("-rtsp_transport");
-        ffmpegCmdList.add("tcp");
         ffmpegCmdList.add("-i");
         ffmpegCmdList.add(originUrl);
         ffmpegCmdList.add("-vcodec");
-        ffmpegCmdList.add("xxx");
         ffmpegCmdList.add("copy");
         ffmpegCmdList.add("-acodec");
         ffmpegCmdList.add("aac");
@@ -60,8 +55,7 @@ public class FFManagementHelper {
             return null;
         }
         String cmdStr = Arrays.toString(ffmpegCmdList.toArray()).replace(",", "");
-        log.info("---开始执行FFmpeg命令状态--- " + ffmpeg.isAlive());
-        log.info("---执行的FFmpeg命令--- " + cmdStr);
+        log.info("---开始执行FFmpeg命令--- " + cmdStr);
         // 取出输出流和错误流的信息
         // 注意：必须要取出ffmpeg在执行命令过程中产生的输出信息，如果不取的话当输出流信息填满jvm存储输出留信息的缓冲区时，线程就回阻塞住
         PrintStream errorStream = new PrintStream(ffmpeg.getErrorStream());

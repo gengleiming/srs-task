@@ -13,6 +13,6 @@ public class ServerConfig {
     private String serviceList;
     @Value("${output.host:localhost}")
     private String outputHost;
-    @Value("${flv.output.port:8080}")
-    private String httpFlvPort;
+    @Value("${http.output.port:8080}")
+    private String httpOutputPort;
 }

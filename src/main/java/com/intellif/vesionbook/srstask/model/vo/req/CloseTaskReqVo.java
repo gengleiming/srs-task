@@ -1,15 +1,16 @@
 package com.intellif.vesionbook.srstask.model.vo.req;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 @Data
-@Schema(name = "创建流任务请求体")
 public class CloseTaskReqVo {
-    @Schema(name = "应用app", required = true, description = "一级app")
+    @ApiModelProperty(value = "应用ID", required = true, example = "garden")
     private String app;
-    @Schema(name = "stream唯一id", required = true, description = "一级stream")
+
+    @ApiModelProperty(value = "源设备ID", required = true, example = "device1")
     private String uniqueId;
-    @Schema(name = "拉流地址", description = "拉流地址")
+
+    @ApiModelProperty(value = "源", example = "rtsp://admin:intellif123@192.168.18.5/live/livestream")
     private String originStream;
 }
