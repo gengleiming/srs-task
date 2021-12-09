@@ -11,4 +11,6 @@ public interface TaskService {
     BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(GetOrCreateTaskReqVo getOrCreateTaskReqVo);
     BaseResponseVo<String> closeStreamTask(CloseTaskReqVo closeTaskReqVo);
 
+    Integer recoverForeverStreamTask();
+
 }

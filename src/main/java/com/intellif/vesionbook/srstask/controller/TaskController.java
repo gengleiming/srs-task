@@ -1,6 +1,5 @@
 package com.intellif.vesionbook.srstask.controller;
 
-import com.intellif.vesionbook.srstask.cache.StreamTaskCache;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
 import com.intellif.vesionbook.srstask.model.vo.req.GetOrCreateTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
@@ -27,7 +26,6 @@ public class TaskController {
     @ApiOperation(value = "创建流任务")
     @PostMapping("/get/or/create/stream/task")
     public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(@RequestBody @Validated GetOrCreateTaskReqVo getOrCreateTaskReqVo) {
-        log.info("cache: {}", StreamTaskCache.taskMap);
         String originUrl = "rtsp://admin:intellif123@192.168.18.5/live/livestream";
         getOrCreateTaskReqVo.setOriginStream(originUrl);
         return taskService.getOrCreateStreamTask(getOrCreateTaskReqVo);
@@ -36,7 +34,6 @@ public class TaskController {
     @ApiOperation(value = "关闭流任务")
     @PostMapping("/close/stream/task")
     public BaseResponseVo<String> closeStreamTask(@RequestBody @Validated CloseTaskReqVo closeTaskReqVo) {
-        log.info("cache: {}", StreamTaskCache.taskMap);
         String originUrl = "rtsp://admin:intellif123@192.168.18.5/live/livestream";
         closeTaskReqVo.setOriginStream(originUrl);
         return taskService.closeStreamTask(closeTaskReqVo);

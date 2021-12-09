@@ -37,6 +37,9 @@ public class TaskServiceImpl implements TaskService {
     @Resource
     ServerConfig serverConfig;
 
+    @Resource
+    StreamTaskCache streamTaskCache;
+
     @Override
     @Transactional
     public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(GetOrCreateTaskReqVo getOrCreateTaskReqVo) {
@@ -59,7 +62,7 @@ public class TaskServiceImpl implements TaskService {
 
         if (ret != null && ret.isSuccess()) {
             StreamTask task = ret.getData();
-            Process process = StreamTaskCache.getProcess(task.getApp(), task.getUniqueId());
+            Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
             log.info("app: {}, unique id: {}, process is null: {}, process is alive: {}", app, uniqueId,
                     process == null, process != null && process.isAlive());
             if (process != null && process.isAlive()) {
@@ -74,7 +77,7 @@ public class TaskServiceImpl implements TaskService {
         }
 
         // 缓存ffmpeg对象
-        StreamTaskCache.storeProcess(app, uniqueId, ffmpeg);
+        streamTaskCache.storeProcess(app, uniqueId, ffmpeg);
 
         String rtmpOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.RTMP.getCode());
         String httpFlvOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.HTTP_HLV.getCode());
@@ -161,7 +164,7 @@ public class TaskServiceImpl implements TaskService {
         if (!ret.isSuccess()) {
             return BaseResponseVo.error(ret.getRespCode(), ret.getRespMark(), ret.getRespMessage());
         }
-        Process process = StreamTaskCache.getProcess(app, uniqueId);
+        Process process = streamTaskCache.getProcess(app, uniqueId);
         if (process == null) {
             log.error("缓存中未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
         } else {
@@ -173,5 +176,48 @@ public class TaskServiceImpl implements TaskService {
         streamTaskMapper.updateStatus(task);
 
         return BaseResponseVo.ok();
+    }
+
+    @Override
+    public Integer recoverForeverStreamTask() {
+        List<StreamTask> tasks = getForeverStreamTask(true);
+        if(tasks ==null || tasks.isEmpty()) {
+            return 0;
+        }
+        int success = 0;
+        int failed = 0;
+        for (StreamTask task: tasks) {
+            Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
+            if(process == null || !process.isAlive()) {
+                // 创建ffmpeg任务
+                Process ffmpeg = ffManagementHelper.transcodeStream(task.getOriginStream(), task.getApp(), task.getUniqueId());
+                if (ffmpeg == null) {
+                    failed += 1;
+                    log.error("forever任务恢复时，ffmpeg 创建失败, 本批第{}个失败， task: {}", task, failed);
+                    continue;
+                }
+
+                // 缓存ffmpeg对象
+                streamTaskCache.storeProcess(task.getApp(), task.getUniqueId(), ffmpeg);
+                success += 1;
+            }
+        }
+        return success;
+    }
+
+    public List<StreamTask> getForeverStreamTask(Boolean lock) {
+        StreamTaskDto streamTaskDto = StreamTaskDto.builder().status(StreamTaskStatusEnum.PROCESSING.getCode())
+                .forever(true).lock(lock).build();
+        List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
+
+        if (streamTasks == null) {
+            return null;
+        }
+
+        if (streamTasks.size() == 0) {
+            return null;
+        }
+
+        return streamTasks;
     }
 }
