@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 @EnableApolloConfig({"application", "vesionbook.common"})
+//@EnableFeignClients
 public class VesionbookSrsTaskApplication {
 
     public static void main(String[] args) {

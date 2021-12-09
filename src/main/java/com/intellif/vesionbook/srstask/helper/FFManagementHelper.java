@@ -1,6 +1,6 @@
 package com.intellif.vesionbook.srstask.helper;
 
-import com.intellif.vesionbook.srstask.config.SRSConfig;
+import com.intellif.vesionbook.srstask.config.ServerConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -8,7 +8,6 @@ import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @description: 视频转码
@@ -21,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class FFManagementHelper {
 
     @Resource
-    private SRSConfig srsConfig;
+    private ServerConfig serverConfig;
     /**
      * 拉流推流，分发HTTP-Hlv和WebRTC地址
      * @param originUrl 拉流源地址
@@ -30,7 +29,7 @@ public class FFManagementHelper {
      * @date 2019/12/10
      */
     public Process transcodeStream(String originUrl, String app, String uniqueId) {
-        String pushUrl = "rtmp://" + srsConfig.getSrsUrl() + "/" + app + "/" + uniqueId;
+        String pushUrl = "rtmp://" + serverConfig.getSrsHost() + "/" + app + "/" + uniqueId;
         //拉流推流，视频转码
         LinkedList<String> ffmpegCmdList = new LinkedList<>();
         ffmpegCmdList.add("ffmpeg");

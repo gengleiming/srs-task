@@ -84,7 +84,7 @@ public class TaskServiceImpl implements TaskService {
         String webrtcOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.WEB_RTC.getCode());
         String hlsOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.HLS.getCode());
         StreamTask task = StreamTask.builder().app(app).uniqueId(uniqueId).originStream(originStream)
-                .service(serverConfig.getServiceHost()).status(StreamTaskStatusEnum.PROCESSING.getCode())
+                .service(serverConfig.getServiceId()).status(StreamTaskStatusEnum.PROCESSING.getCode())
                 .rtmpOutput(rtmpOutput).httpFlvOutput(httpFlvOutput).hlsOutput(hlsOutput).webrtcOutput(webrtcOutput)
                 .forever(forever).build();
 
@@ -206,7 +206,8 @@ public class TaskServiceImpl implements TaskService {
     }
 
     public List<StreamTask> getForeverStreamTask(Boolean lock) {
-        StreamTaskDto streamTaskDto = StreamTaskDto.builder().status(StreamTaskStatusEnum.PROCESSING.getCode())
+        StreamTaskDto streamTaskDto = StreamTaskDto.builder().service(serverConfig.getServiceId())
+                .status(StreamTaskStatusEnum.PROCESSING.getCode())
                 .forever(true).lock(lock).build();
         List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
 
