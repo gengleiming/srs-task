@@ -40,7 +40,7 @@ stages:
   - sonar
   - build
   #  - test
-#  - deploy
+  - deploy
 
 before_script:
   - ls -lh
