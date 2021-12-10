@@ -132,6 +132,7 @@
         set status = #{status, jdbcType=INTEGER}
         where app = #{app,jdbcType=VARCHAR}
           and unique_id = #{uniqueId, jdbcType=VARCHAR}
+          and service = #{service, jdbcType=VARCHAR}
     </update>
 
 </mapper>

@@ -56,7 +56,7 @@ public class TaskServiceImpl implements TaskService {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_TYPE_NOT_SUPPORT);
         }
 
-        StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId)
+        StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId).service(serverConfig.getServiceId())
                 .status(StreamTaskStatusEnum.PROCESSING.getCode()).lock(true).build();
         List<StreamTask> tasks= getStreamTask(streamTaskDto);
         if (tasks.size() > 1) {
@@ -139,10 +139,10 @@ public class TaskServiceImpl implements TaskService {
         String uniqueId = closeTaskReqVo.getUniqueId();
         String originStream = closeTaskReqVo.getOriginStream();
 
-        StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId)
+        StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId).service(serverConfig.getServiceId())
                 .status(StreamTaskStatusEnum.PROCESSING.getCode()).lock(true).build();
-        List<StreamTask> tasks = getStreamTask(streamTaskDto);
 
+        List<StreamTask> tasks = getStreamTask(streamTaskDto);
 
         if (tasks.isEmpty()) {
             log.error("数据库未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
@@ -162,7 +162,8 @@ public class TaskServiceImpl implements TaskService {
         }
 
         // 关闭
-        StreamTask task = StreamTask.builder().app(app).uniqueId(uniqueId).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
+        StreamTask task = StreamTask.builder().app(app).uniqueId(uniqueId).service(serverConfig.getServiceId())
+                .status(StreamTaskStatusEnum.CLOSED.getCode()).build();
         streamTaskMapper.updateStatus(task);
 
         return BaseResponseVo.ok();

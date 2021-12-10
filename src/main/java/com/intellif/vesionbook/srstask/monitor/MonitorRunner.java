@@ -1,6 +1,5 @@
 package com.intellif.vesionbook.srstask.monitor;
 
-import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -17,8 +16,8 @@ public class MonitorRunner implements ApplicationRunner {
     private TaskService taskService;
 
     @Override
-    public void run(ApplicationArguments var1) {
-        while (true) {
+    public void run(ApplicationArguments var) {
+        do {
             try {
                 Integer recover = taskService.recoverForeverStreamTask();
                 log.info("monitor recover success: {}", recover);
@@ -28,6 +27,6 @@ public class MonitorRunner implements ApplicationRunner {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
+        } while (true);
     }
 }
