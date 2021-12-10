@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,13 +56,16 @@ public class TaskServiceImpl implements TaskService {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_TYPE_NOT_SUPPORT);
         }
 
-        BaseResponseVo<StreamTask> ret = getAliveStreamTask(app, uniqueId, true);
-        if (ret != null && !ret.isSuccess()) {
-            return BaseResponseVo.error(ret.getRespCode(), ret.getRespMark(), ret.getRespMessage());
+        StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId)
+                .status(StreamTaskStatusEnum.PROCESSING.getCode()).lock(true).build();
+        List<StreamTask> tasks= getStreamTask(streamTaskDto);
+        if (tasks.size() > 1) {
+            log.error("发现重复的流任务 stream tasks: {}", tasks);
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_REPEAT);
         }
 
-        if (ret != null && ret.isSuccess()) {
-            StreamTask task = ret.getData();
+        if (tasks.size() == 1) {
+            StreamTask task = tasks.get(0);
             Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
             log.info("app: {}, unique id: {}, process is null: {}, process is alive: {}", app, uniqueId,
                     process == null, process != null && process.isAlive());
@@ -88,7 +92,7 @@ public class TaskServiceImpl implements TaskService {
                 .rtmpOutput(rtmpOutput).httpFlvOutput(httpFlvOutput).hlsOutput(hlsOutput).webrtcOutput(webrtcOutput)
                 .forever(forever).build();
 
-        if (ret == null) {
+        if (tasks.size() == 0) {
             streamTaskMapper.insertSelective(task);
         }
 
@@ -128,27 +132,6 @@ public class TaskServiceImpl implements TaskService {
         return BaseResponseVo.ok(vo);
     }
 
-    public BaseResponseVo<StreamTask> getAliveStreamTask(String app, String uniqueId, Boolean lock) {
-        StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId)
-                .status(StreamTaskStatusEnum.PROCESSING.getCode()).lock(lock).build();
-        List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
-
-        if (streamTasks == null) {
-            return null;
-        }
-
-        if (streamTasks.size() > 1) {
-            log.error("发现重复的流任务 stream tasks: {}", streamTasks);
-            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_REPEAT);
-        }
-        if (streamTasks.size() == 0) {
-            return null;
-        }
-
-        return BaseResponseVo.ok(streamTasks.get(0));
-    }
-
-
     @Override
     @Transactional
     public BaseResponseVo<String> closeStreamTask(CloseTaskReqVo closeTaskReqVo) {
@@ -156,14 +139,21 @@ public class TaskServiceImpl implements TaskService {
         String uniqueId = closeTaskReqVo.getUniqueId();
         String originStream = closeTaskReqVo.getOriginStream();
 
-        BaseResponseVo<StreamTask> ret = getAliveStreamTask(app, uniqueId, true);
-        if (ret == null) {
+        StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId)
+                .status(StreamTaskStatusEnum.PROCESSING.getCode()).lock(true).build();
+        List<StreamTask> tasks = getStreamTask(streamTaskDto);
+
+
+        if (tasks.isEmpty()) {
             log.error("数据库未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_DATABASE_NOT_FOUND);
         }
-        if (!ret.isSuccess()) {
-            return BaseResponseVo.error(ret.getRespCode(), ret.getRespMark(), ret.getRespMessage());
+
+        if (tasks.size() > 1) {
+            log.error("发现重复的流任务 stream tasks: {}", tasks);
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_REPEAT);
         }
+
         Process process = streamTaskCache.getProcess(app, uniqueId);
         if (process == null) {
             log.error("缓存中未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
@@ -180,10 +170,16 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public Integer recoverForeverStreamTask() {
-        List<StreamTask> tasks = getForeverStreamTask(true);
-        if(tasks ==null || tasks.isEmpty()) {
+        StreamTaskDto streamTaskDto = StreamTaskDto.builder().service(serverConfig.getServiceId())
+                .status(StreamTaskStatusEnum.PROCESSING.getCode())
+                .forever(true).lock(true).build();
+
+        List<StreamTask> tasks = getStreamTask(streamTaskDto);
+
+        if(tasks.isEmpty()) {
             return 0;
         }
+
         int success = 0;
         int failed = 0;
         for (StreamTask task: tasks) {
@@ -205,18 +201,19 @@ public class TaskServiceImpl implements TaskService {
         return success;
     }
 
-    public List<StreamTask> getForeverStreamTask(Boolean lock) {
-        StreamTaskDto streamTaskDto = StreamTaskDto.builder().service(serverConfig.getServiceId())
-                .status(StreamTaskStatusEnum.PROCESSING.getCode())
-                .forever(true).lock(lock).build();
-        List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
+    @Override
+    public Integer closeDeadStreamTask() {
+        return null;
+    }
 
+    public  List<StreamTask> getStreamTask(StreamTaskDto streamTaskDto) {
+        List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
         if (streamTasks == null) {
-            return null;
+            return new ArrayList<>();
         }
 
         if (streamTasks.size() == 0) {
-            return null;
+            return new ArrayList<>();
         }
 
         return streamTasks;

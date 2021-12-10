@@ -13,4 +13,6 @@ public interface TaskService {
 
     Integer recoverForeverStreamTask();
 
+    Integer closeDeadStreamTask();
+
 }

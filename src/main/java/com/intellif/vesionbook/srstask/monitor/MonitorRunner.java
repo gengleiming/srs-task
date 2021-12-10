@@ -20,8 +20,10 @@ public class MonitorRunner implements ApplicationRunner {
     public void run(ApplicationArguments var1) {
         while (true) {
             try {
-                Integer success = taskService.recoverForeverStreamTask();
-                log.info("recover success: {}", success);
+                Integer recover = taskService.recoverForeverStreamTask();
+                log.info("recover success: {}", recover);
+                Integer dead = taskService.closeDeadStreamTask();
+                log.info("close dead: {}", recover);
                 Thread.sleep(2000);
             } catch (Exception e) {
                 e.printStackTrace();
