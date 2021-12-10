@@ -4,7 +4,7 @@ VOLUME /tmp
 ADD  target /app
 ADD  build/entrypoint.sh /
 COPY build/repositories /etc/apk/repositories
-RUN  apk update --allow-untrusted && apk add --no-cache bash curl ffmpeg
+RUN  apk update --allow-untrusted && apk add --no-cache bash curl && apk add --no-cache ffmpeg
 
 EXPOSE 9920
 ENTRYPOINT ["/entrypoint.sh"]
