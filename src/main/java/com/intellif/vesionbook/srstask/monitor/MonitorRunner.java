@@ -21,9 +21,9 @@ public class MonitorRunner implements ApplicationRunner {
         while (true) {
             try {
                 Integer recover = taskService.recoverForeverStreamTask();
-                log.info("recover success: {}", recover);
+                log.info("monitor recover success: {}", recover);
                 Integer dead = taskService.closeDeadStreamTask();
-                log.info("close dead: {}", recover);
+                log.info("monitor close dead: {}", dead);
                 Thread.sleep(2000);
             } catch (Exception e) {
                 e.printStackTrace();

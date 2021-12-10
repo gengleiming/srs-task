@@ -171,8 +171,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public Integer recoverForeverStreamTask() {
         StreamTaskDto streamTaskDto = StreamTaskDto.builder().service(serverConfig.getServiceId())
-                .status(StreamTaskStatusEnum.PROCESSING.getCode())
-                .forever(true).lock(true).build();
+                .status(StreamTaskStatusEnum.PROCESSING.getCode()).forever(true).lock(true).build();
 
         List<StreamTask> tasks = getStreamTask(streamTaskDto);
 
@@ -203,7 +202,24 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public Integer closeDeadStreamTask() {
-        return null;
+        StreamTaskDto streamTaskDto = StreamTaskDto.builder().service(serverConfig.getServiceId())
+                .status(StreamTaskStatusEnum.PROCESSING.getCode()).forever(false).lock(true).build();
+
+        List<StreamTask> streamTasks = getStreamTask(streamTaskDto);
+        int dead = 0;
+        for(StreamTask task: streamTasks) {
+            Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
+
+            if(process == null || !process.isAlive()) {
+                // 关闭
+                StreamTask updateTask = StreamTask.builder().app(task.getApp()).uniqueId(task.getUniqueId())
+                        .service(serverConfig.getServiceId()).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
+                streamTaskMapper.updateStatus(updateTask);
+                dead += 1;
+            }
+        }
+
+        return dead;
     }
 
     public  List<StreamTask> getStreamTask(StreamTaskDto streamTaskDto) {
