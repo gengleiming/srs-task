@@ -33,6 +33,9 @@ public class FFManagementHelper {
         //拉流推流，视频转码
         LinkedList<String> ffmpegCmdList = new LinkedList<>();
         ffmpegCmdList.add("ffmpeg");
+        ffmpegCmdList.add("-re");
+        ffmpegCmdList.add("-rtsp_transport");
+        ffmpegCmdList.add("tcp");
         ffmpegCmdList.add("-i");
         ffmpegCmdList.add(originUrl);
         ffmpegCmdList.add("-vcodec");
