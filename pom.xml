@@ -80,7 +80,7 @@
     </dependencies>
 
     <build>
-        <finalName>vesionbook-data-platform</finalName>
+        <finalName>vesionbook-srs-task</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -122,7 +122,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>com.intellif.vesionbook.VesionbookDataPlatformApplication</mainClass>
+                            <mainClass>com.intellif.vesionbook.VesionbookSrsTaskApplication</mainClass>
                             <classpathPrefix>lib</classpathPrefix>
                             <useUniqueVersions>false</useUniqueVersions>
                         </manifest>
