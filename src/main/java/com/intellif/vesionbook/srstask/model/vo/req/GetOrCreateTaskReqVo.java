@@ -17,6 +17,6 @@ public class GetOrCreateTaskReqVo {
     @ApiModelProperty(value = "分发类型 1:rtmp 2:http-hlv 3:hls 4:WebRTC", required = true, example = "4")
     private Integer outputType;
 
-    @ApiModelProperty(value = "永久视频流，一般用于长期不会关闭的视频流，比如ai引擎", example = "false")
-    private Boolean forever;
+    @ApiModelProperty(value = "永久视频流，一般用于长期不会关闭的视频流，比如ai引擎", example = "0")
+    private Integer forever;
 }
