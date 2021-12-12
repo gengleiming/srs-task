@@ -5,6 +5,7 @@ import com.intellif.vesionbook.srstask.config.ServerConfig;
 import com.intellif.vesionbook.srstask.enums.ReturnCodeEnum;
 import com.intellif.vesionbook.srstask.enums.StreamOutputTypeEnum;
 import com.intellif.vesionbook.srstask.enums.StreamTaskStatusEnum;
+import com.intellif.vesionbook.srstask.helper.FFCommandHelper;
 import com.intellif.vesionbook.srstask.helper.JavaCVHelper;
 import com.intellif.vesionbook.srstask.mapper.StreamTaskMapper;
 import com.intellif.vesionbook.srstask.model.dto.StreamTaskDto;
@@ -15,8 +16,6 @@ import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
-import org.bytedeco.javacv.FrameGrabber;
-import org.bytedeco.javacv.FrameRecorder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -24,6 +23,7 @@ import org.springframework.util.StringUtils;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 
@@ -42,6 +42,10 @@ public class TaskServiceImpl implements TaskService {
 
     @Resource
     JavaCVHelper javaCVHelper;
+
+    @Resource
+    FFCommandHelper ffCommandHelper;
+
 
     @Override
     @Transactional
@@ -68,34 +72,19 @@ public class TaskServiceImpl implements TaskService {
 
         if (tasks.size() == 1) {
             StreamTask task = tasks.get(0);
-            Thread process = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
-            log.info("app: {}, unique id: {}, process is null: {}, process is alive: {}", app, uniqueId,
-                    process == null, process != null && process.isAlive());
-//            if (process != null){
-//                if(process.isAlive()){
-//                    return getStreamAddress(task, outputType);
-//                } else {
-//                    process.destroy();
-//                }
-            if (process != null ) {
-                log.info("process state: {}", process.getState());
-                if (process.isAlive()) {
-                    return getStreamAddress(task, outputType);
-                } else {
-                    log.info("process exist but not alive");
-                    process.interrupt();
-                }
+            Boolean exists = checkCacheExistsOrClear(task);
+            if(exists) {
+                return getStreamAddress(task, outputType);
             }
         }
 
-//        // 创建任务
-//        Process ffmpeg = ffManagementHelper.transcodeStream(originStream, app, uniqueId);
-//        if (ffmpeg == null) {
-//            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_FAILED);
-//        }
+        // 创建任务
+        createTask(originStream, app, uniqueId);
+        Process ffmpeg = ffCommandHelper.transcodeStream(originStream, app, uniqueId);
 
-        // 创建流任务
-        javaCVHelper.asyncPullRtspPushRtmp(originStream, app, uniqueId);
+        if (ffmpeg == null) {
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_FAILED);
+        }
 
         String rtmpOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.RTMP.getCode());
         String httpFlvOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.HTTP_HLV.getCode());
@@ -111,6 +100,48 @@ public class TaskServiceImpl implements TaskService {
         }
 
         return getStreamAddress(task, outputType);
+    }
+
+    public Boolean checkCacheExistsOrClear(StreamTask task) {
+        if(Objects.equals(serverConfig.getUseJavacv(), "1")) {
+            Thread process = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
+            log.info("app: {}, unique id: {}, process is null: {}, process is alive: {}",
+                    task.getApp(), task.getUniqueId(), process == null, process != null && process.isAlive());
+            if (process != null ) {
+                log.info("process state: {}", process.getState());
+                if (process.isAlive()) {
+                    return true;
+                } else {
+                    log.info("process exist but not alive");
+                    process.interrupt();
+                }
+            }
+            streamTaskCache.clearThread(task.getApp(), task.getUniqueId());
+        } else{
+            Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
+            log.info("app: {}, unique id: {}, process is null: {}, process is alive: {}",
+                    task.getApp(), task.getUniqueId(), process == null, process != null && process.isAlive());
+            if (process != null ) {
+                if (process.isAlive()) {
+                    return true;
+                } else {
+                    log.info("process exist but not alive");
+                    process.destroy();
+                }
+            }
+            streamTaskCache.clearProcess(task.getApp(), task.getUniqueId());
+        }
+
+        return null;
+    }
+
+    public void createTask(String originStream, String app, String uniqueId) {
+        // 创建流任务
+        if(serverConfig.getUseJavacv().equals("1")) {
+            javaCVHelper.asyncPullRtspPushRtmp(originStream, app, uniqueId);
+        } else {
+            ffCommandHelper.transcodeStream(originStream, app, uniqueId);
+        }
     }
 
     public String getOutputStream(String app, String uniqueId, Integer outputType) {
@@ -168,20 +199,13 @@ public class TaskServiceImpl implements TaskService {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_REPEAT);
         }
 
-        Thread process = streamTaskCache.getThread(app, uniqueId);
-        if (process == null) {
-            log.error("缓存中未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
-        } else {
-            process.interrupt();
-        }
+        StreamTask streamTask = tasks.get(0);
+        checkCacheExistsOrClear(streamTask);
 
         // 关闭
         StreamTask task = StreamTask.builder().app(app).uniqueId(uniqueId).service(serverConfig.getServiceId())
                 .status(StreamTaskStatusEnum.CLOSED.getCode()).build();
         streamTaskMapper.updateStatus(task);
-
-//        streamTaskCache.clearProcess(app, uniqueId);
-        streamTaskCache.clearThread(app, uniqueId);
 
         return BaseResponseVo.ok();
     }
@@ -199,13 +223,30 @@ public class TaskServiceImpl implements TaskService {
 
         int success = 0;
         for (StreamTask task: tasks) {
-            Thread process = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
-            if(process == null || !process.isAlive()) {
-                javaCVHelper.asyncPullRtspPushRtmp(task.getOriginStream(), task.getApp(), task.getUniqueId());
+            Boolean ok = recoverTask(task);
+            if(ok) {
                 success += 1;
             }
         }
         return success;
+    }
+
+    public Boolean recoverTask(StreamTask task) {
+        if(serverConfig.getUseJavacv().equals("1")) {
+            Thread process = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
+            if(process == null || !process.isAlive()) {
+                javaCVHelper.asyncPullRtspPushRtmp(task.getOriginStream(), task.getApp(), task.getUniqueId());
+                return true;
+            }
+
+        }else{
+            Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
+            if(process == null || !process.isAlive()) {
+                ffCommandHelper.transcodeStream(task.getOriginStream(), task.getApp(), task.getUniqueId());
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -216,19 +257,39 @@ public class TaskServiceImpl implements TaskService {
         List<StreamTask> streamTasks = getStreamTask(streamTaskDto);
         int dead = 0;
         for(StreamTask task: streamTasks) {
-            Thread process = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
-
-            if(process == null || !process.isAlive()) {
-                // 关闭
-                StreamTask updateTask = StreamTask.builder().id(task.getId()).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
-                streamTaskMapper.updateStatus(updateTask);
-//                streamTaskCache.clearProcess(task.getApp(), task.getUniqueId());
-                streamTaskCache.clearThread(task.getApp(), task.getUniqueId());
+            Boolean ok = closeTask(task);
+            if(ok) {
                 dead += 1;
             }
         }
 
         return dead;
+    }
+
+    public Boolean closeTask(StreamTask task) {
+        if(serverConfig.getUseJavacv().equals("1")) {
+            Thread thread = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
+
+            if(thread == null || !thread.isAlive()) {
+                // 关闭
+                StreamTask updateTask = StreamTask.builder().id(task.getId()).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
+                streamTaskMapper.updateStatus(updateTask);
+                streamTaskCache.clearThread(task.getApp(), task.getUniqueId());
+                return true;
+            }
+
+        }else{
+            Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
+
+            if(process == null || !process.isAlive()) {
+                // 关闭
+                StreamTask updateTask = StreamTask.builder().id(task.getId()).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
+                streamTaskMapper.updateStatus(updateTask);
+                streamTaskCache.clearProcess(task.getApp(), task.getUniqueId());
+                return true;
+            }
+        }
+        return false;
     }
 
     public  List<StreamTask> getStreamTask(StreamTaskDto streamTaskDto) {

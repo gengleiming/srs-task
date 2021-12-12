@@ -15,4 +15,7 @@ public class ServerConfig {
     private String outputHost;
     @Value("${stream.output.port:8080}")
     private String httpOutputPort;
+
+    @Value("${stream.with.javacv:1}")
+    private String useJavacv;
 }
