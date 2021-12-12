@@ -77,6 +77,11 @@
             <version>3.0.5</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv-platform</artifactId>
+            <version>1.5.5</version>
+        </dependency>
     </dependencies>
 
     <build>

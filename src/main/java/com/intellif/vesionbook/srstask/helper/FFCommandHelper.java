@@ -11,13 +11,13 @@ import java.util.LinkedList;
 
 /**
  * @description: 视频转码
- * @author: zhangzhixiang
- * @createDate: 2019/12/11
+ * @author: gengleiming
+ * @createDate: 2021/12/01
  * @version: 1.0
  */
 @Component
 @Slf4j
-public class FFManagementHelper {
+public class FFCommandHelper {
 
     @Resource
     private ServerConfig serverConfig;
