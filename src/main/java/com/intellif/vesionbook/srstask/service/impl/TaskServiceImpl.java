@@ -169,6 +169,8 @@ public class TaskServiceImpl implements TaskService {
                 .status(StreamTaskStatusEnum.CLOSED.getCode()).build();
         streamTaskMapper.updateStatus(task);
 
+        streamTaskCache.clearThread(app, uniqueId);
+
         return BaseResponseVo.ok();
     }
 
@@ -208,6 +210,7 @@ public class TaskServiceImpl implements TaskService {
                 // 关闭
                 StreamTask updateTask = StreamTask.builder().id(task.getId()).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
                 streamTaskMapper.updateStatus(updateTask);
+                streamTaskCache.clearThread(task.getApp(), task.getUniqueId());
                 dead += 1;
             }
         }

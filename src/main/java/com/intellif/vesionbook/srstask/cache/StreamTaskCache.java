@@ -3,7 +3,6 @@ package com.intellif.vesionbook.srstask.cache;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
 
 @Component
 public class StreamTaskCache {
@@ -37,5 +36,9 @@ public class StreamTaskCache {
     public Thread getThread(String app, String uniqueId) {
         String taskKey = getTaskThreadKey(app, uniqueId);
         return taskThreadMap.get(taskKey);
+    }
+    public void clearThread(String app, String uniqueId) {
+        String taskKey = getTaskThreadKey(app, uniqueId);
+        taskThreadMap.remove(taskKey);
     }
 }

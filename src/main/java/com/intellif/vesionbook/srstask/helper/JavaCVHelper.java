@@ -85,19 +85,29 @@ public class JavaCVHelper {
                 if (packet == null || packet.size() <= 0 || packet.data() == null) {
                     //空包记录次数跳过
                     no_frame_index++;
-                    if (no_frame_index > 10 && no_frame_index % 10 == 0) {
+                    if (no_frame_index > 10 && no_frame_index < 100 && no_frame_index % 10 == 0) {
+                        log.error("no frame index: {}", no_frame_index);
+                    }
+                    if (no_frame_index > 100 && no_frame_index < 10000 && no_frame_index % 100 == 0) {
+                        log.error("no frame index: {}", no_frame_index);
+                    }
+                    if (no_frame_index > 10000 && no_frame_index < 100000 && no_frame_index % 1000 == 0) {
+                        log.error("no frame index: {}", no_frame_index);
+                    }
+                    if (no_frame_index > 1000000 && no_frame_index % 10000 == 0) {
                         log.error("no frame index: {}", no_frame_index);
                     }
                     continue;
                 }
                 no_frame_index = 0;
                 //不需要编码直接把音视频帧推出去
-                recorder.recordPacket(packet);//如果失败err_index自增1
+                recorder.recordPacket(packet);
+                // 将缓存空间的引用计数-1，并将Packet中的其他字段设为初始值。如果引用计数为0，自动的释放缓存空间。
                 av_packet_unref(packet);
             } catch (Exception e) {//推流失败
                 err_index++;
+                e.printStackTrace();
                 if(err_index > 5) {
-                    e.printStackTrace();
                     log.error("拉流推流错误次数超过5次，err_index: {}, app: {}, unique id: {}, origin: {}, push: {}",
                             err_index, app, uniqueId, originStream, pushStream);
                     break;
