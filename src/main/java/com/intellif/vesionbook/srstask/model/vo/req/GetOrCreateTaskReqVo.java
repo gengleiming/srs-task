@@ -18,5 +18,5 @@ public class GetOrCreateTaskReqVo {
     private Integer outputType;
 
     @ApiModelProperty(value = "永久视频流，一般用于长期不会关闭的视频流，比如ai引擎", example = "false")
-    private Boolean forever;
+    private Integer forever;
 }

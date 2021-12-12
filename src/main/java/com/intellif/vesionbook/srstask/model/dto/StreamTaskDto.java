@@ -18,7 +18,7 @@ public class StreamTaskDto {
     private String hlsOutput;
     private String webrtcOutput;
     private Integer status;
-    private Boolean forever;
+    private Integer forever;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Boolean lock;

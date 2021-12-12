@@ -49,7 +49,7 @@ public class TaskServiceImpl implements TaskService {
         String uniqueId = getOrCreateTaskReqVo.getUniqueId();
         String originStream = getOrCreateTaskReqVo.getOriginStream();
         Integer outputType = getOrCreateTaskReqVo.getOutputType();
-        Boolean forever = Optional.ofNullable(getOrCreateTaskReqVo.getForever()).orElse(false);
+        Integer forever = Optional.ofNullable(getOrCreateTaskReqVo.getForever()).orElse(0);
 
         if (outputType != StreamOutputTypeEnum.RTMP.getCode() && outputType != StreamOutputTypeEnum.HTTP_HLV.getCode()
                 && outputType != StreamOutputTypeEnum.WEB_RTC.getCode() && outputType != StreamOutputTypeEnum.HLS.getCode()) {
@@ -172,7 +172,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public Integer recoverForeverStreamTask() {
         StreamTaskDto streamTaskDto = StreamTaskDto.builder().service(serverConfig.getServiceId())
-                .status(StreamTaskStatusEnum.PROCESSING.getCode()).forever(true).lock(true).build();
+                .status(StreamTaskStatusEnum.PROCESSING.getCode()).forever(1).lock(true).build();
 
         List<StreamTask> tasks = getStreamTask(streamTaskDto);
 
@@ -204,7 +204,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public Integer closeDeadStreamTask() {
         StreamTaskDto streamTaskDto = StreamTaskDto.builder().service(serverConfig.getServiceId())
-                .status(StreamTaskStatusEnum.PROCESSING.getCode()).forever(false).lock(true).build();
+                .status(StreamTaskStatusEnum.PROCESSING.getCode()).forever(0).lock(true).build();
 
         List<StreamTask> streamTasks = getStreamTask(streamTaskDto);
         int dead = 0;
