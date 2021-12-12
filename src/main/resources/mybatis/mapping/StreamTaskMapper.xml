@@ -158,9 +158,6 @@
             <if test="webrtcOutput != null and webrtcOutput != ''">
                 and webrtc_output = #{webrtcOutput,jdbcType=VARCHAR}
             </if>
-            <if test="status != null and status != ''">
-                and status = #{status,jdbcType=INTEGER}
-            </if>
             <if test="forever != null">
                 and forever = #{forever,jdbcType=TINYINT}
             </if>

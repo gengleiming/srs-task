@@ -21,4 +21,10 @@ public class StreamTaskCache {
         String taskKey = getTaskKey(app, uniqueId);
         return taskMap.get(taskKey);
     }
+
+    public void clearProcess(String app, String uniqueId) {
+        String taskKey = getTaskKey(app, uniqueId);
+        taskMap.remove(taskKey);
+    }
+
 }
