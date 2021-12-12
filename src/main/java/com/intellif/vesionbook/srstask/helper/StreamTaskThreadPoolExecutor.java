@@ -12,11 +12,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 
-@Component
 @Slf4j
 public class StreamTaskThreadPoolExecutor extends ThreadPoolTaskExecutor {
-    @Resource
-    StreamTaskCache streamTaskCache;
 
     private void showThreadPoolInfo(String prefix) {
         ThreadPoolExecutor threadPoolExecutor = getThreadPoolExecutor();
@@ -51,9 +48,8 @@ public class StreamTaskThreadPoolExecutor extends ThreadPoolTaskExecutor {
     @Override
     public <T> Future<T> submit(Callable<T> task) {
         showThreadPoolInfo("2. do submit");
-        Future<T> future = super.submit(task);
 
-        return future;
+        return super.submit(task);
     }
 
     @Override
