@@ -39,7 +39,7 @@
             <if test="webrtcOutput != null and webrtcOutput != ''">
                 and webrtc_output = #{webrtcOutput,jdbcType=VARCHAR}
             </if>
-            <if test="status != null and status != ''">
+            <if test="status != null">
                 and status = #{status,jdbcType=INTEGER}
             </if>
             <if test="forever != null">
@@ -86,7 +86,7 @@
             <if test="webrtcOutput != null and webrtcOutput != ''">
                 webrtc_output,
             </if>
-            <if test="status != null and status != ''">
+            <if test="status != null">
                 status,
             </if>
             <if test="forever != null">
@@ -118,7 +118,7 @@
             <if test="webrtcOutput != null and webrtcOutput != ''">
                 #{webrtcOutput,jdbcType=VARCHAR},
             </if>
-            <if test="status != null and status != ''">
+            <if test="status != null">
                 #{status,jdbcType=INTEGER},
             </if>
             <if test="forever != null">

@@ -69,8 +69,12 @@ public class TaskServiceImpl implements TaskService {
             Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
             log.info("app: {}, unique id: {}, process is null: {}, process is alive: {}", app, uniqueId,
                     process == null, process != null && process.isAlive());
-            if (process != null && process.isAlive()) {
-                return getStreamAddress(task, outputType);
+            if (process != null){
+                if(process.isAlive()){
+                    return getStreamAddress(task, outputType);
+                } else {
+                    process.destroy();
+                }
             }
         }
 
