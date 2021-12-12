@@ -23,7 +23,7 @@ public class MonitorRunner implements ApplicationRunner {
                 log.info("monitor recover success: {}", recover);
                 Integer dead = taskService.closeDeadStreamTask();
                 log.info("monitor close dead: {}", dead);
-                Thread.sleep(2000);
+                Thread.sleep(10000);
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -5,7 +5,7 @@ import com.intellif.vesionbook.srstask.config.ServerConfig;
 import com.intellif.vesionbook.srstask.enums.ReturnCodeEnum;
 import com.intellif.vesionbook.srstask.enums.StreamOutputTypeEnum;
 import com.intellif.vesionbook.srstask.enums.StreamTaskStatusEnum;
-import com.intellif.vesionbook.srstask.helper.FFManagementHelper;
+import com.intellif.vesionbook.srstask.helper.JavaCVHelper;
 import com.intellif.vesionbook.srstask.mapper.StreamTaskMapper;
 import com.intellif.vesionbook.srstask.model.dto.StreamTaskDto;
 import com.intellif.vesionbook.srstask.model.entity.StreamTask;
@@ -15,6 +15,8 @@ import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
+import org.bytedeco.javacv.FrameGrabber;
+import org.bytedeco.javacv.FrameRecorder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -29,8 +31,6 @@ import java.util.Optional;
 @Slf4j
 public class TaskServiceImpl implements TaskService {
 
-    @Resource
-    FFManagementHelper ffManagementHelper;
 
     @Resource
     StreamTaskMapper streamTaskMapper;
@@ -40,6 +40,9 @@ public class TaskServiceImpl implements TaskService {
 
     @Resource
     StreamTaskCache streamTaskCache;
+
+    @Resource
+    JavaCVHelper javaCVHelper;
 
     @Override
     @Transactional
@@ -66,22 +69,22 @@ public class TaskServiceImpl implements TaskService {
 
         if (tasks.size() == 1) {
             StreamTask task = tasks.get(0);
-            Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
+            Thread process = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
             log.info("app: {}, unique id: {}, process is null: {}, process is alive: {}", app, uniqueId,
                     process == null, process != null && process.isAlive());
-            if (process != null && process.isAlive()) {
-                return getStreamAddress(task, outputType);
+            if (process != null ) {
+                log.info("process state: {}", process.getState());
+                if (process.isAlive()) {
+                    return getStreamAddress(task, outputType);
+                } else {
+                    log.info("process exist but not alive");
+                    process.interrupt();
+                }
             }
         }
 
-        // 创建任务
-        Process ffmpeg = ffManagementHelper.transcodeStream(originStream, app, uniqueId);
-        if (ffmpeg == null) {
-            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_FAILED);
-        }
-
-        // 缓存ffmpeg对象
-        streamTaskCache.storeProcess(app, uniqueId, ffmpeg);
+        // 创建流任务
+        javaCVHelper.asyncPullRtspPushRtmp(originStream, app, uniqueId);
 
         String rtmpOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.RTMP.getCode());
         String httpFlvOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.HTTP_HLV.getCode());
@@ -154,11 +157,11 @@ public class TaskServiceImpl implements TaskService {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_REPEAT);
         }
 
-        Process process = streamTaskCache.getProcess(app, uniqueId);
+        Thread process = streamTaskCache.getThread(app, uniqueId);
         if (process == null) {
             log.error("缓存中未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
         } else {
-            process.destroy();
+            process.interrupt();
         }
 
         // 关闭
@@ -181,20 +184,10 @@ public class TaskServiceImpl implements TaskService {
         }
 
         int success = 0;
-        int failed = 0;
         for (StreamTask task: tasks) {
-            Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
+            Thread process = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
             if(process == null || !process.isAlive()) {
-                // 创建ffmpeg任务
-                Process ffmpeg = ffManagementHelper.transcodeStream(task.getOriginStream(), task.getApp(), task.getUniqueId());
-                if (ffmpeg == null) {
-                    failed += 1;
-                    log.error("forever任务恢复时，ffmpeg 创建失败, 本批第{}个失败， task: {}", task, failed);
-                    continue;
-                }
-
-                // 缓存ffmpeg对象
-                streamTaskCache.storeProcess(task.getApp(), task.getUniqueId(), ffmpeg);
+                javaCVHelper.asyncPullRtspPushRtmp(task.getOriginStream(), task.getApp(), task.getUniqueId());
                 success += 1;
             }
         }
