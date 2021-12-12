@@ -202,12 +202,11 @@ public class TaskServiceImpl implements TaskService {
         List<StreamTask> streamTasks = getStreamTask(streamTaskDto);
         int dead = 0;
         for(StreamTask task: streamTasks) {
-            Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
+            Thread process = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
 
             if(process == null || !process.isAlive()) {
                 // 关闭
-                StreamTask updateTask = StreamTask.builder().app(task.getApp()).uniqueId(task.getUniqueId())
-                        .service(serverConfig.getServiceId()).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
+                StreamTask updateTask = StreamTask.builder().id(task.getId()).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
                 streamTaskMapper.updateStatus(updateTask);
                 dead += 1;
             }
