@@ -216,6 +216,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     public  List<StreamTask> getStreamTask(StreamTaskDto streamTaskDto) {
+        log.info("stream task dto: {}", streamTaskDto);
         List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
         if (streamTasks == null) {
             return new ArrayList<>();
