@@ -1,4 +1,4 @@
-CREATE TABLE `stream_task`
+CREATE TABLE if not exists `stream_task`
 (
     id              bigint primary key auto_increment,
     origin_stream   varchar(255) not null comment '拉流地址',
