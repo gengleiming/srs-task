@@ -78,12 +78,15 @@ public class TaskServiceImpl implements TaskService {
             }
         }
 
+        Integer leftStreamSpace = getLeftStreamSpace(app, uniqueId);
+        if(leftStreamSpace <=0) {
+            log.error("over task limit. app: {}, unique id: {}", app, uniqueId);
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_MAX_LIMIT);
+        }
         // 创建任务
-        createTask(originStream, app, uniqueId);
-        Process ffmpeg = ffCommandHelper.transcodeStream(originStream, app, uniqueId);
-
-        if (ffmpeg == null) {
-            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_FAILED);
+        Boolean success = createTask(originStream, app, uniqueId);
+        if(!success){
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_MAX_LIMIT);
         }
 
         String rtmpOutput = getOutputStream(app, uniqueId, StreamOutputTypeEnum.RTMP.getCode());
@@ -132,16 +135,23 @@ public class TaskServiceImpl implements TaskService {
             streamTaskCache.clearProcess(task.getApp(), task.getUniqueId());
         }
 
-        return null;
+        return false;
     }
 
-    public void createTask(String originStream, String app, String uniqueId) {
+    public Boolean createTask(String originStream, String app, String uniqueId) {
+
         // 创建流任务
         if(serverConfig.getUseJavacv().equals("1")) {
             javaCVHelper.asyncPullRtspPushRtmp(originStream, app, uniqueId);
         } else {
-            ffCommandHelper.transcodeStream(originStream, app, uniqueId);
+            Process ffmpeg = ffCommandHelper.transcodeStream(originStream, app, uniqueId);
+            if (ffmpeg == null) {
+                return false;
+            }
+            streamTaskCache.storeProcess(app, uniqueId, ffmpeg);
         }
+
+        return true;
     }
 
     public String getOutputStream(String app, String uniqueId, Integer outputType) {
@@ -242,7 +252,11 @@ public class TaskServiceImpl implements TaskService {
         }else{
             Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
             if(process == null || !process.isAlive()) {
-                ffCommandHelper.transcodeStream(task.getOriginStream(), task.getApp(), task.getUniqueId());
+                Process ffmpeg = ffCommandHelper.transcodeStream(task.getOriginStream(), task.getApp(), task.getUniqueId());
+                if(ffmpeg == null) {
+                    return false;
+                }
+                streamTaskCache.storeProcess(task.getApp(), task.getUniqueId(), ffmpeg);
                 return true;
             }
         }
@@ -303,5 +317,16 @@ public class TaskServiceImpl implements TaskService {
         }
 
         return streamTasks;
+    }
+
+    public Integer getLeftStreamSpace(String app, String uniqueId) {
+        Integer existsTask;
+        if(serverConfig.getUseJavacv().equals("1")) {
+            existsTask = streamTaskCache.getThreadNumber(app, uniqueId);
+        } else {
+            existsTask = streamTaskCache.getProcessNumber();
+        }
+        return serverConfig.getStreamPoolSize() - existsTask;
+
     }
 }

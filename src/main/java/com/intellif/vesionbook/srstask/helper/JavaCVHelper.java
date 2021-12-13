@@ -36,6 +36,7 @@ public class JavaCVHelper {
 
         try{
             grabber = new FFmpegFrameGrabber(originStream);
+
             if (originStream.contains("rtsp")) {
                 // tcp用于解决丢包问题
                 grabber.setOption("rtsp_transport", "tcp");
@@ -54,10 +55,10 @@ public class JavaCVHelper {
         try {
             // 录制/推流器
             recorder = new FFmpegFrameRecorder(pushStream, grabber.getImageWidth(), grabber.getImageHeight());
-            // 两个关键帧之间的帧数
-            recorder.setGopSize(2);
             // 帧率
             recorder.setFrameRate(grabber.getFrameRate());
+            // 两个关键帧之间的帧数, 设置gop,与帧率相同，相当于间隔1秒chan's一个关键帧
+            recorder.setGopSize((int) grabber.getFrameRate());
             // 比特率
             recorder.setVideoBitrate(grabber.getVideoBitrate());
             // 封装格式flv

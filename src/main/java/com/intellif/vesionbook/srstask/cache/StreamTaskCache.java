@@ -29,6 +29,10 @@ public class StreamTaskCache {
         taskMap.remove(taskKey);
     }
 
+    public int getProcessNumber() {
+        return taskMap.size();
+    }
+
     private String getTaskThreadKey(String app, String uniqueId) {
         return "stream_task_" + app + "_" + uniqueId;
     }
@@ -45,5 +49,9 @@ public class StreamTaskCache {
     public void clearThread(String app, String uniqueId) {
         String taskKey = getTaskThreadKey(app, uniqueId);
         taskThreadMap.remove(taskKey);
+    }
+
+    public int getThreadNumber(String app, String uniqueId) {
+        return taskThreadMap.size();
     }
 }

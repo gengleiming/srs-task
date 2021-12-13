@@ -16,6 +16,9 @@ public class ServerConfig {
     @Value("${stream.output.port:8080}")
     private String httpOutputPort;
 
-    @Value("${stream.with.javacv:1}")
+    @Value("${stream.with.javacv:0}")
     private String useJavacv;
+
+    @Value("${stream.pool.size:3}")
+    private Integer streamPoolSize;
 }

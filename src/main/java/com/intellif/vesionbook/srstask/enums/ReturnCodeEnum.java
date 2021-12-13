@@ -25,6 +25,7 @@ public enum ReturnCodeEnum {
     ERROR_STREAM_TASK_FAILED(90000006, "stream task failed", "流任务执行失败"),
     ERROR_STREAM_TASK_NOT_ALIVE(90000007, "stream task not alive", "流任务不在存活状态"),
     ERROR_STREAM_TASK_NONE(90000008, "stream task none", "流任务不存在"),
+    ERROR_STREAM_TASK_MAX_LIMIT(90000009, "stream task max limit", "流任务数量超出限制"),
     ;
 
     private final int resultCode;

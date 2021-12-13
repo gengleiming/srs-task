@@ -16,17 +16,17 @@ public class MonitorRunner implements ApplicationRunner {
     private TaskService taskService;
 
     @Override
-    public void run(ApplicationArguments var) {
+    public void run(ApplicationArguments var) throws InterruptedException {
         do {
             try {
                 Integer recover = taskService.recoverForeverStreamTask();
                 log.info("monitor recover success: {}", recover);
                 Integer dead = taskService.closeDeadStreamTask();
                 log.info("monitor close dead: {}", dead);
-                Thread.sleep(60000);
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            Thread.sleep(60000);
         } while (true);
     }
 }
