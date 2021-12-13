@@ -31,53 +31,96 @@ public class JavaCVHelper {
 
     @Async("asyncServiceExecutor")
     public void asyncPullRtspPushRtmp(String originStream, String app, String uniqueId) {
-        FFmpegFrameGrabber grabber;
-        FFmpegFrameRecorder recorder;
-
-        try{
-            grabber = new FFmpegFrameGrabber(originStream);
-
-            if (originStream.contains("rtsp")) {
-                // tcp用于解决丢包问题
-                grabber.setOption("rtsp_transport", "tcp");
-            }
-            grabber.setOption("vcodec", "copy");
-            // 设置采集器构造超时时间
-            grabber.setOption("stimeout", "2000000");
-            grabber.start();
-        } catch (Exception e) {
-            e.printStackTrace();
+        FFmpegFrameGrabber grabber = getGrabber(originStream);
+        if (grabber == null) {
             log.error("拉流失败，请检查视频流，originStream: {}, app: {}, uniqueId: {}", originStream, app, uniqueId);
             return;
         }
 
         String pushStream = "rtmp://" + serverConfig.getSrsHost() + "/" + app + "/" + uniqueId;
-        try {
-            // 录制/推流器
-            recorder = new FFmpegFrameRecorder(pushStream, grabber.getImageWidth(), grabber.getImageHeight());
-            // 帧率
-            recorder.setFrameRate(grabber.getFrameRate());
-            // 两个关键帧之间的帧数, 设置gop,与帧率相同，相当于间隔1秒chan's一个关键帧
-            recorder.setGopSize((int) grabber.getFrameRate());
-            // 比特率
-            recorder.setVideoBitrate(grabber.getVideoBitrate());
-            // 封装格式flv
-            recorder.setFormat("flv");
-            recorder.setAudioCodecName("aac");
-            AVFormatContext fc = grabber.getFormatContext();
-            recorder.start(fc);
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("推流失败，请检查srs服务器, originStream: {}, app: {}, uniqueId: {}, pushStream: {}", originStream, app, uniqueId, pushStream);
+
+        FFmpegFrameRecorder recorder = getRecorder(grabber, pushStream);
+        if (recorder == null) {
+            log.error("推流失败，请检查视频流，originStream: {}, app: {}, uniqueId: {}, pushStream: {}",
+                    originStream, app, uniqueId, pushStream);
             return;
         }
-
-        int no_frame_index = 0;
-        int err_index = 0;
 
         Thread currentThread = Thread.currentThread();
         streamTaskCache.storeThread(app, uniqueId, currentThread);
 
+        transcodeStream(grabber, recorder, app, uniqueId, originStream, pushStream);
+
+    }
+
+    public FFmpegFrameGrabber getGrabber(String input) {
+        try {
+            FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(input);
+
+            if (input.contains("rtsp")) {
+                // tcp用于解决丢包问题
+                grabber.setOption("rtsp_transport", "tcp");
+                //首选TCP进行RTP传输
+                grabber.setOption("rtsp_flags", "prefer_tcp");
+            }
+            // 设置采集器构造超时时间, 5s
+            grabber.setOption("stimeout", "5000000");
+            grabber.setOption("vcodec", "copy");
+            grabber.start();
+            return grabber;
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("拉流失败，请检查视频流，input: {}", input);
+        }
+
+        return null;
+    }
+
+    public FFmpegFrameRecorder getRecorder(FFmpegFrameGrabber grabber, String output) {
+        try {
+            // 录制/推流器
+            FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(output, grabber.getImageWidth(),
+                    grabber.getImageHeight(), grabber.getAudioChannels());
+            // 两个关键帧之间的帧数, 设置gop,与帧率相同，相当于间隔1秒chan's一个关键帧
+            recorder.setGopSize((int) grabber.getFrameRate());
+            recorder.setFrameRate(grabber.getFrameRate());
+            recorder.setVideoBitrate(grabber.getVideoBitrate());
+
+            recorder.setAudioChannels(grabber.getAudioChannels());
+            recorder.setAudioBitrate(grabber.getAudioBitrate());
+            recorder.setSampleRate(grabber.getSampleRate());
+
+            AVFormatContext oc = null;
+            // 封装格式flv
+            if(output.startsWith("rtmp")) {
+                recorder.setFormat("flv");
+                recorder.setAudioCodecName("aac");
+                recorder.setVideoCodec(grabber.getVideoCodec());
+                oc = grabber.getFormatContext();
+            }
+            recorder.start(oc);
+            return recorder;
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("推流失败，请检查srs服务器, output: {}", output);
+        }
+        return null;
+    }
+
+    public void transcodeStream(FFmpegFrameGrabber grabber, FFmpegFrameRecorder recorder,
+                                String app, String uniqueId, String input, String output) {
+        int no_frame_index = 0;
+        int err_index = 0;
+
+        try {
+            // 释放探测时缓存下来的数据帧，避免pts初始值不为0导致画面延时
+            grabber.flush();
+        } catch (Exception e) {
+            log.error("grabber flush error, app: {}, unique id: {}, input: {}, output: {}",
+                    app, uniqueId, input, output);
+        }
+
+        Thread currentThread = Thread.currentThread();
         while (!currentThread.isInterrupted()) {
             try {
                 //没有解码的音视频帧
@@ -100,18 +143,17 @@ public class JavaCVHelper {
                     continue;
                 }
                 no_frame_index = 0;
-                // 初始化dts为起始位置，否则会报错
-                packet.dts(0);
                 //不需要编码直接把音视频帧推出去
                 recorder.recordPacket(packet);
                 // 将缓存空间的引用计数-1，并将Packet中的其他字段设为初始值。如果引用计数为0，自动的释放缓存空间。
                 av_packet_unref(packet);
+                err_index = 0;
             } catch (Exception e) {//推流失败
                 err_index++;
                 e.printStackTrace();
-                if(err_index > 5) {
-                    log.error("拉流推流错误次数超过5次，err_index: {}, app: {}, unique id: {}, origin: {}, push: {}",
-                            err_index, app, uniqueId, originStream, pushStream);
+                if (err_index > 5) {
+                    log.error("拉流推流错误次数超过5次，err_index: {}, app: {}, unique id: {}, input: {}, output: {}",
+                            err_index, app, uniqueId, input, output);
                     break;
                 }
             }
@@ -120,9 +162,9 @@ public class JavaCVHelper {
         try {
             grabber.close();
             recorder.close();
-            log.info("stream task stop， app: {}, unique id: {}, origin: {}, push: {}", app, uniqueId, originStream, pushStream);
+            log.info("stream task stop， app: {}, unique id: {}, input: {}, output: {}", app, uniqueId, input, output);
         } catch (Exception e) {
-            log.error("stream task stop error， app: {}, unique id: {}, origin: {}, push: {}", app, uniqueId, originStream, pushStream);
+            log.error("stream task stop error， app: {}, unique id: {}, input: {}, output: {}", app, uniqueId, input, output);
             e.printStackTrace();
         }
 

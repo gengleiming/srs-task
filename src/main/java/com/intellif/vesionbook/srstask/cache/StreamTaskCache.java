@@ -51,7 +51,7 @@ public class StreamTaskCache {
         taskThreadMap.remove(taskKey);
     }
 
-    public int getThreadNumber(String app, String uniqueId) {
+    public int getThreadNumber() {
         return taskThreadMap.size();
     }
 }

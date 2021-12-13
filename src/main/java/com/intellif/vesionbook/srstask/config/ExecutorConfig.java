@@ -15,11 +15,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Slf4j
 public class ExecutorConfig {
 
-    @Value("${async.executor.thread.core_pool_size:2}")
+    @Value("${async.executor.thread.core_pool_size:200}")
     private int corePoolSize;
-    @Value("${async.executor.thread.max_pool_size:2}")
+    @Value("${async.executor.thread.max_pool_size:200}")
     private int maxPoolSize;
-    @Value("${async.executor.thread.queue_capacity:2}")
+    @Value("${async.executor.thread.queue_capacity:0}")
     private int queueCapacity;
     @Value("${async.executor.thread.name.prefix:stream-task-}")
     private String namePrefix;

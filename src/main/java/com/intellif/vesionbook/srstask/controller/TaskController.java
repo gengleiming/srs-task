@@ -1,5 +1,6 @@
 package com.intellif.vesionbook.srstask.controller;
 
+import com.intellif.vesionbook.srstask.cache.StreamTaskCache;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
 import com.intellif.vesionbook.srstask.model.vo.req.GetOrCreateTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
@@ -23,15 +24,20 @@ public class TaskController {
     @Resource
     private TaskService taskService;
 
+    @Resource
+    private StreamTaskCache streamTaskCache;
+
     @ApiOperation(value = "创建流任务")
     @PostMapping("/get/or/create/stream/task")
     public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(@RequestBody @Validated GetOrCreateTaskReqVo getOrCreateTaskReqVo) {
+        log.info("process number: {}, thread number: {}", streamTaskCache.getProcessNumber(), streamTaskCache.getThreadNumber());
         return taskService.getOrCreateStreamTask(getOrCreateTaskReqVo);
     }
 
     @ApiOperation(value = "关闭流任务")
     @PostMapping("/close/stream/task")
     public BaseResponseVo<String> closeStreamTask(@RequestBody @Validated CloseTaskReqVo closeTaskReqVo) {
+        log.info("process number: {}, thread number: {}", streamTaskCache.getProcessNumber(), streamTaskCache.getThreadNumber());
         return taskService.closeStreamTask(closeTaskReqVo);
     }
 }

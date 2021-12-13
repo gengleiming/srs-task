@@ -78,7 +78,7 @@ public class TaskServiceImpl implements TaskService {
             }
         }
 
-        Integer leftStreamSpace = getLeftStreamSpace(app, uniqueId);
+        Integer leftStreamSpace = getLeftStreamSpace();
         if(leftStreamSpace <=0) {
             log.error("over task limit. app: {}, unique id: {}", app, uniqueId);
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_MAX_LIMIT);
@@ -139,6 +139,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     public Boolean createTask(String originStream, String app, String uniqueId) {
+        log.info("create stream task, ");
 
         // 创建流任务
         if(serverConfig.getUseJavacv().equals("1")) {
@@ -307,6 +308,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     public  List<StreamTask> getStreamTask(StreamTaskDto streamTaskDto) {
+        log.info("get mysql stream task: {}", streamTaskDto);
         List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
         if (streamTasks == null) {
             return new ArrayList<>();
@@ -319,10 +321,10 @@ public class TaskServiceImpl implements TaskService {
         return streamTasks;
     }
 
-    public Integer getLeftStreamSpace(String app, String uniqueId) {
+    public Integer getLeftStreamSpace() {
         Integer existsTask;
         if(serverConfig.getUseJavacv().equals("1")) {
-            existsTask = streamTaskCache.getThreadNumber(app, uniqueId);
+            existsTask = streamTaskCache.getThreadNumber();
         } else {
             existsTask = streamTaskCache.getProcessNumber();
         }
