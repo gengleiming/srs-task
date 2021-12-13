@@ -2,8 +2,9 @@ package com.intellif.vesionbook.srstask.controller;
 
 import com.intellif.vesionbook.srstask.cache.StreamTaskCache;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
-import com.intellif.vesionbook.srstask.model.vo.req.GetOrCreateTaskReqVo;
+import com.intellif.vesionbook.srstask.model.vo.req.TaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
+import com.intellif.vesionbook.srstask.model.vo.req.SyncTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import io.swagger.annotations.Api;
@@ -29,9 +30,9 @@ public class TaskController {
 
     @ApiOperation(value = "创建流任务")
     @PostMapping("/get/or/create/stream/task")
-    public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(@RequestBody @Validated GetOrCreateTaskReqVo getOrCreateTaskReqVo) {
+    public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(@RequestBody @Validated TaskReqVo taskReqVo) {
         log.info("process number: {}, thread number: {}", streamTaskCache.getProcessNumber(), streamTaskCache.getThreadNumber());
-        return taskService.getOrCreateStreamTask(getOrCreateTaskReqVo);
+        return taskService.getOrCreateStreamTask(taskReqVo);
     }
 
     @ApiOperation(value = "关闭流任务")
@@ -39,5 +40,12 @@ public class TaskController {
     public BaseResponseVo<String> closeStreamTask(@RequestBody @Validated CloseTaskReqVo closeTaskReqVo) {
         log.info("process number: {}, thread number: {}", streamTaskCache.getProcessNumber(), streamTaskCache.getThreadNumber());
         return taskService.closeStreamTask(closeTaskReqVo);
+    }
+
+    @ApiOperation(value = "同步流任务")
+    @PostMapping("/sync/stream/task")
+    public BaseResponseVo<String> syncStreamTask(@RequestBody @Validated SyncTaskReqVo syncTaskReqVo) {
+        log.info("process number: {}, thread number: {}", streamTaskCache.getProcessNumber(), streamTaskCache.getThreadNumber());
+        return taskService.syncStreamTask(syncTaskReqVo);
     }
 }

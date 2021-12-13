@@ -20,5 +20,5 @@ public class ServerConfig {
     private String useJavacv;
 
     @Value("${stream.pool.limit:100}")
-    private Integer streamPoolSize;
+    private Integer streamPoolLimit;
 }

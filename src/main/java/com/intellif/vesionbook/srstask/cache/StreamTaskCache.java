@@ -2,6 +2,7 @@ package com.intellif.vesionbook.srstask.cache;
 
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -10,7 +11,7 @@ public class StreamTaskCache {
 
     private final ConcurrentHashMap<String, Thread> taskThreadMap = new ConcurrentHashMap<>();
 
-    private String getTaskKey(String app, String uniqueId) {
+    public String getTaskKey(String app, String uniqueId) {
         return "stream_task_" + app + "_" + uniqueId;
     }
 
@@ -33,8 +34,12 @@ public class StreamTaskCache {
         return taskMap.size();
     }
 
-    private String getTaskThreadKey(String app, String uniqueId) {
-        return "stream_task_" + app + "_" + uniqueId;
+    public ConcurrentHashMap<String, Process> getProcessMap() {
+        return taskMap;
+    }
+
+    public String getTaskThreadKey(String app, String uniqueId) {
+        return "stream_task_thread_" + app + "_" + uniqueId;
     }
 
     public void storeThread(String app, String uniqueId, Thread process) {
@@ -53,5 +58,9 @@ public class StreamTaskCache {
 
     public int getThreadNumber() {
         return taskThreadMap.size();
+    }
+
+    public ConcurrentHashMap<String, Thread> getThreadMap() {
+        return taskThreadMap;
     }
 }

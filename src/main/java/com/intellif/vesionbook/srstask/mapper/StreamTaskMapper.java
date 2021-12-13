@@ -12,5 +12,7 @@ public interface StreamTaskMapper {
 
     List<StreamTask> selectByParam(StreamTaskDto streamTaskDto);
     void insertSelective(StreamTask streamTask);
-    void updateStatus(StreamTask streamTask);
+    void updateStatus(StreamTaskDto streamTaskDto);
+
+    void insertTaskBatch(List<StreamTask> list);
 }

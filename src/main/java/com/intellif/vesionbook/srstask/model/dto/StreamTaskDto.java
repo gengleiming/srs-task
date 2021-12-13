@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -22,4 +23,5 @@ public class StreamTaskDto {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Boolean lock;
+    private List<String> uniqueIdList;
 }

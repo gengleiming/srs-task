@@ -11,8 +11,9 @@ import com.intellif.vesionbook.srstask.mapper.StreamTaskMapper;
 import com.intellif.vesionbook.srstask.model.dto.StreamTaskDto;
 import com.intellif.vesionbook.srstask.model.entity.StreamTask;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
-import com.intellif.vesionbook.srstask.model.vo.req.GetOrCreateTaskReqVo;
+import com.intellif.vesionbook.srstask.model.vo.req.TaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
+import com.intellif.vesionbook.srstask.model.vo.req.SyncTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
@@ -21,10 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -49,13 +49,13 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(GetOrCreateTaskReqVo getOrCreateTaskReqVo) {
+    public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(TaskReqVo taskReqVo) {
 
-        String app = getOrCreateTaskReqVo.getApp();
-        String uniqueId = getOrCreateTaskReqVo.getUniqueId();
-        String originStream = getOrCreateTaskReqVo.getOriginStream();
-        Integer outputType = getOrCreateTaskReqVo.getOutputType();
-        Integer forever = Optional.ofNullable(getOrCreateTaskReqVo.getForever()).orElse(0);
+        String app = taskReqVo.getApp();
+        String uniqueId = taskReqVo.getUniqueId();
+        String originStream = taskReqVo.getOriginStream();
+        Integer outputType = taskReqVo.getOutputType();
+        Integer forever = Optional.ofNullable(taskReqVo.getForever()).orElse(0);
 
         if (outputType != StreamOutputTypeEnum.RTMP.getCode() && outputType != StreamOutputTypeEnum.HTTP_HLV.getCode()
                 && outputType != StreamOutputTypeEnum.WEB_RTC.getCode() && outputType != StreamOutputTypeEnum.HLS.getCode()) {
@@ -64,7 +64,7 @@ public class TaskServiceImpl implements TaskService {
 
         StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId).service(serverConfig.getServiceId())
                 .status(StreamTaskStatusEnum.PROCESSING.getCode()).lock(true).build();
-        List<StreamTask> tasks= getStreamTask(streamTaskDto);
+        List<StreamTask> tasks = getStreamTask(streamTaskDto);
         if (tasks.size() > 1) {
             log.error("发现重复的流任务 stream tasks: {}", tasks);
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_REPEAT);
@@ -72,20 +72,21 @@ public class TaskServiceImpl implements TaskService {
 
         if (tasks.size() == 1) {
             StreamTask task = tasks.get(0);
-            Boolean exists = checkCacheExistsOrClear(task);
-            if(exists) {
+            Boolean exists = checkCacheAliveOrClearDead(task);
+            if (exists) {
                 return getStreamAddress(task, outputType);
             }
         }
 
+        // -------------- 开始创建 ---------------------
         Integer leftStreamSpace = getLeftStreamSpace();
-        if(leftStreamSpace <=0) {
+        if (leftStreamSpace <= 0) {
             log.error("over task limit. app: {}, unique id: {}", app, uniqueId);
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_MAX_LIMIT);
         }
         // 创建任务
-        Boolean success = createTask(originStream, app, uniqueId);
-        if(!success){
+        Boolean success = createCacheTask(originStream, app, uniqueId);
+        if (!success) {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_MAX_LIMIT);
         }
 
@@ -105,44 +106,32 @@ public class TaskServiceImpl implements TaskService {
         return getStreamAddress(task, outputType);
     }
 
-    public Boolean checkCacheExistsOrClear(StreamTask task) {
-        if(Objects.equals(serverConfig.getUseJavacv(), "1")) {
+    public Boolean checkCacheAliveOrClearDead(StreamTask task) {
+        if (Objects.equals(serverConfig.getUseJavacv(), "1")) {
             Thread process = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
             log.info("app: {}, unique id: {}, process is null: {}, process is alive: {}",
                     task.getApp(), task.getUniqueId(), process == null, process != null && process.isAlive());
-            if (process != null ) {
-                log.info("process state: {}", process.getState());
-                if (process.isAlive()) {
-                    return true;
-                } else {
-                    log.info("process exist but not alive");
-                    process.interrupt();
-                }
+            if (process != null && process.isAlive()) {
+                return true;
             }
-            streamTaskCache.clearThread(task.getApp(), task.getUniqueId());
-        } else{
+        } else {
             Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
             log.info("app: {}, unique id: {}, process is null: {}, process is alive: {}",
                     task.getApp(), task.getUniqueId(), process == null, process != null && process.isAlive());
-            if (process != null ) {
-                if (process.isAlive()) {
-                    return true;
-                } else {
-                    log.info("process exist but not alive");
-                    process.destroy();
-                }
+            if (process != null && process.isAlive()) {
+                return true;
             }
-            streamTaskCache.clearProcess(task.getApp(), task.getUniqueId());
         }
+        closeCache(task.getApp(), task.getUniqueId());
 
         return false;
     }
 
-    public Boolean createTask(String originStream, String app, String uniqueId) {
-        log.info("create stream task, ");
+    public Boolean createCacheTask(String originStream, String app, String uniqueId) {
+        log.info("create cache task. app: {}, unique id: {}, origin stream: {}", app, uniqueId, originStream);
 
         // 创建流任务
-        if(serverConfig.getUseJavacv().equals("1")) {
+        if (serverConfig.getUseJavacv().equals("1")) {
             javaCVHelper.asyncPullRtspPushRtmp(originStream, app, uniqueId);
         } else {
             Process ffmpeg = ffCommandHelper.transcodeStream(originStream, app, uniqueId);
@@ -200,23 +189,23 @@ public class TaskServiceImpl implements TaskService {
 
         List<StreamTask> tasks = getStreamTask(streamTaskDto);
 
+        StreamTask task = StreamTask.builder().app(app).uniqueId(uniqueId).build();
+        checkCacheAliveOrClearDead(task);
+
         if (tasks.isEmpty()) {
             log.error("数据库未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
-            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_DATABASE_NOT_FOUND);
         }
 
         if (tasks.size() > 1) {
             log.error("发现重复的流任务 stream tasks: {}", tasks);
-            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_REPEAT);
         }
 
         StreamTask streamTask = tasks.get(0);
-        checkCacheExistsOrClear(streamTask);
 
         // 关闭
-        StreamTask task = StreamTask.builder().app(app).uniqueId(uniqueId).service(serverConfig.getServiceId())
+        StreamTaskDto taskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId).service(serverConfig.getServiceId())
                 .status(StreamTaskStatusEnum.CLOSED.getCode()).build();
-        streamTaskMapper.updateStatus(task);
+        streamTaskMapper.updateStatus(taskDto);
 
         return BaseResponseVo.ok();
     }
@@ -228,14 +217,14 @@ public class TaskServiceImpl implements TaskService {
 
         List<StreamTask> tasks = getStreamTask(streamTaskDto);
 
-        if(tasks.isEmpty()) {
+        if (tasks.isEmpty()) {
             return 0;
         }
 
         int success = 0;
-        for (StreamTask task: tasks) {
+        for (StreamTask task : tasks) {
             Boolean ok = recoverTask(task);
-            if(ok) {
+            if (ok) {
                 success += 1;
             }
         }
@@ -243,18 +232,18 @@ public class TaskServiceImpl implements TaskService {
     }
 
     public Boolean recoverTask(StreamTask task) {
-        if(serverConfig.getUseJavacv().equals("1")) {
+        if (serverConfig.getUseJavacv().equals("1")) {
             Thread process = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
-            if(process == null || !process.isAlive()) {
+            if (process == null || !process.isAlive()) {
                 javaCVHelper.asyncPullRtspPushRtmp(task.getOriginStream(), task.getApp(), task.getUniqueId());
                 return true;
             }
 
-        }else{
+        } else {
             Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
-            if(process == null || !process.isAlive()) {
+            if (process == null || !process.isAlive()) {
                 Process ffmpeg = ffCommandHelper.transcodeStream(task.getOriginStream(), task.getApp(), task.getUniqueId());
-                if(ffmpeg == null) {
+                if (ffmpeg == null) {
                     return false;
                 }
                 streamTaskCache.storeProcess(task.getApp(), task.getUniqueId(), ffmpeg);
@@ -271,9 +260,9 @@ public class TaskServiceImpl implements TaskService {
 
         List<StreamTask> streamTasks = getStreamTask(streamTaskDto);
         int dead = 0;
-        for(StreamTask task: streamTasks) {
-            Boolean ok = closeTask(task);
-            if(ok) {
+        for (StreamTask task : streamTasks) {
+            Boolean ok = closeDeadTask(task);
+            if (ok) {
                 dead += 1;
             }
         }
@@ -281,24 +270,24 @@ public class TaskServiceImpl implements TaskService {
         return dead;
     }
 
-    public Boolean closeTask(StreamTask task) {
-        if(serverConfig.getUseJavacv().equals("1")) {
+    public Boolean closeDeadTask(StreamTask task) {
+        if (serverConfig.getUseJavacv().equals("1")) {
             Thread thread = streamTaskCache.getThread(task.getApp(), task.getUniqueId());
 
-            if(thread == null || !thread.isAlive()) {
+            if (thread == null || !thread.isAlive()) {
                 // 关闭
-                StreamTask updateTask = StreamTask.builder().id(task.getId()).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
+                StreamTaskDto updateTask = StreamTaskDto.builder().id(task.getId()).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
                 streamTaskMapper.updateStatus(updateTask);
                 streamTaskCache.clearThread(task.getApp(), task.getUniqueId());
                 return true;
             }
 
-        }else{
+        } else {
             Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
 
-            if(process == null || !process.isAlive()) {
+            if (process == null || !process.isAlive()) {
                 // 关闭
-                StreamTask updateTask = StreamTask.builder().id(task.getId()).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
+                StreamTaskDto updateTask = StreamTaskDto.builder().id(task.getId()).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
                 streamTaskMapper.updateStatus(updateTask);
                 streamTaskCache.clearProcess(task.getApp(), task.getUniqueId());
                 return true;
@@ -307,7 +296,7 @@ public class TaskServiceImpl implements TaskService {
         return false;
     }
 
-    public  List<StreamTask> getStreamTask(StreamTaskDto streamTaskDto) {
+    public List<StreamTask> getStreamTask(StreamTaskDto streamTaskDto) {
         log.info("get mysql stream task: {}", streamTaskDto);
         List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
         if (streamTasks == null) {
@@ -323,12 +312,131 @@ public class TaskServiceImpl implements TaskService {
 
     public Integer getLeftStreamSpace() {
         Integer existsTask;
-        if(serverConfig.getUseJavacv().equals("1")) {
+        if (serverConfig.getUseJavacv().equals("1")) {
             existsTask = streamTaskCache.getThreadNumber();
         } else {
             existsTask = streamTaskCache.getProcessNumber();
         }
-        return serverConfig.getStreamPoolSize() - existsTask;
+        return serverConfig.getStreamPoolLimit() - existsTask;
 
+    }
+
+    @Override
+    @Transactional
+    public BaseResponseVo<String> syncStreamTask(SyncTaskReqVo syncTaskReqVo) {
+        String app = syncTaskReqVo.getApp();
+
+        StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).service(serverConfig.getServiceId())
+                .status(StreamTaskStatusEnum.PROCESSING.getCode()).lock(true).build();
+
+        List<StreamTask> tasks = getStreamTask(streamTaskDto);
+        List<String> dbAliveList = tasks.stream().map(StreamTask::getUniqueId).collect(Collectors.toList());
+
+        List<TaskReqVo> reqTaskList = syncTaskReqVo.getTaskList();
+        List<String> uniqueIdList = reqTaskList.stream().map(TaskReqVo::getUniqueId).collect(Collectors.toList());
+        // 先关闭缓存中不该存在的流任务
+        closeCacheFromClient(app, uniqueIdList);
+        // 关闭数据库不该存在的任务
+        List<String> shouldDeadList = dbAliveList.stream().filter(item->!uniqueIdList.contains(item)).collect(Collectors.toList());
+        if(shouldDeadList.size()>0) {
+            StreamTaskDto updateTask = StreamTaskDto.builder().uniqueIdList(shouldDeadList).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
+            streamTaskMapper.updateStatus(updateTask);
+        }
+
+        // 开启缓存中应该存在的流任务
+        if(getLeftStreamSpace() <= 0) {
+            log.error("sync error. There is no space left.");
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_MAX_LIMIT);
+        }
+
+        startCacheFromClient(app, reqTaskList);
+
+        // 批量插入应该存活的任务
+        List<TaskReqVo> voList = syncTaskReqVo.getTaskList().stream().filter(item -> !dbAliveList.contains(item.getUniqueId())).collect(Collectors.toList());
+        List<StreamTask> insertList = new ArrayList<>();
+        for(TaskReqVo vo: voList) {
+            String rtmpOutput = getOutputStream(app, vo.getUniqueId(), StreamOutputTypeEnum.RTMP.getCode());
+            String httpFlvOutput = getOutputStream(app, vo.getUniqueId(), StreamOutputTypeEnum.HTTP_HLV.getCode());
+            String webrtcOutput = getOutputStream(app, vo.getUniqueId(), StreamOutputTypeEnum.WEB_RTC.getCode());
+            String hlsOutput = getOutputStream(app, vo.getUniqueId(), StreamOutputTypeEnum.HLS.getCode());
+            StreamTask task = StreamTask.builder().originStream(vo.getOriginStream()).app(vo.getApp()).uniqueId(vo.getUniqueId())
+                    .service(serverConfig.getServiceId()).status(StreamTaskStatusEnum.PROCESSING.getCode())
+                    .forever(vo.getForever()).httpFlvOutput(httpFlvOutput).rtmpOutput(rtmpOutput).webrtcOutput(webrtcOutput).hlsOutput(hlsOutput).build();
+            insertList.add(task);
+        }
+
+        log.info("insert batch: {}", insertList);
+        if(insertList.size()>0) {
+            streamTaskMapper.insertTaskBatch(insertList);
+        }
+
+        return BaseResponseVo.ok();
+    }
+
+    public void closeCacheFromClient(String app, List<String> uniqueIdList) {
+        if(serverConfig.getUseJavacv().equals("1")) {
+            List<String> shouldAliveList = uniqueIdList.stream().map(item-> streamTaskCache.getTaskThreadKey(app, item)).collect(Collectors.toList());
+            ConcurrentHashMap<String, Thread> threadMap = streamTaskCache.getThreadMap();
+            for(Map.Entry<String, Thread> entry: threadMap.entrySet()){
+                String uniqueId = entry.getKey();
+                if(!shouldAliveList.contains(uniqueId)) {
+                    closeCache(app, uniqueId);
+                }
+            }
+        } else {
+            List<String> shouldAliveList = uniqueIdList.stream().map(item-> streamTaskCache.getTaskKey(app, item)).collect(Collectors.toList());
+            ConcurrentHashMap<String, Process> threadMap = streamTaskCache.getProcessMap();
+            for(Map.Entry<String, Process> entry: threadMap.entrySet()){
+                String uniqueId = entry.getKey();
+                if(!shouldAliveList.contains(uniqueId)) {
+                    closeCache(app, uniqueId);
+                }
+            }
+
+        }
+    }
+
+    public void closeCache(String app, String uniqueId) {
+        if(serverConfig.getUseJavacv().equals("1")) {
+            Thread thread = streamTaskCache.getThread(app, uniqueId);
+            if(thread != null && thread.isAlive()) {
+                thread.interrupt();
+            }
+            streamTaskCache.clearThread(app, uniqueId);
+        } else {
+            Process process = streamTaskCache.getProcess(app, uniqueId);
+            if(process != null && process.isAlive()) {
+                process.destroy();
+            }
+            streamTaskCache.clearProcess(app, uniqueId);
+        }
+        log.info("close cache. app: {}, unique id: {}", app, uniqueId);
+    }
+
+    public void startCacheFromClient(String app, List<TaskReqVo> taskVos) {
+        if(serverConfig.getUseJavacv().equals("1")) {
+            ConcurrentHashMap<String, Thread> threadMap = streamTaskCache.getThreadMap();
+            Set<String> cacheList = threadMap.keySet();
+
+            for (TaskReqVo taskVo : taskVos) {
+                String uniqueId = streamTaskCache.getTaskThreadKey(app, taskVo.getUniqueId());
+
+                if(!cacheList.contains(uniqueId)) {
+                    createCacheTask(taskVo.getOriginStream(), app, uniqueId);
+                }
+            }
+        } else {
+            ConcurrentHashMap<String, Process> processMap = streamTaskCache.getProcessMap();
+            Set<String> cacheList = processMap.keySet();
+
+            for (TaskReqVo taskVo : taskVos) {
+                String uniqueId = streamTaskCache.getTaskKey(app, taskVo.getUniqueId());
+
+                if(!cacheList.contains(uniqueId)) {
+                    createCacheTask(taskVo.getOriginStream(), app, uniqueId);
+                }
+            }
+
+        }
     }
 }

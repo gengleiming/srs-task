@@ -4,7 +4,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 @Data
-public class GetOrCreateTaskReqVo {
+public class TaskReqVo {
     @ApiModelProperty(value = "应用ID", required = true, example = "garden")
     private String app;
 
@@ -19,4 +19,7 @@ public class GetOrCreateTaskReqVo {
 
     @ApiModelProperty(value = "永久视频流，一般用于长期不会关闭的视频流，比如ai引擎", example = "0")
     private Integer forever;
+
+    @ApiModelProperty(hidden = true)
+    private String key;
 }
