@@ -11,6 +11,7 @@ import com.intellif.vesionbook.srstask.mapper.StreamTaskMapper;
 import com.intellif.vesionbook.srstask.model.dto.StreamTaskDto;
 import com.intellif.vesionbook.srstask.model.entity.StreamTask;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
+import com.intellif.vesionbook.srstask.model.vo.req.TaskListReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.TaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.SyncReqVo;
@@ -441,5 +442,18 @@ public class TaskServiceImpl implements TaskService {
             }
 
         }
+    }
+
+    @Override
+    public BaseResponseVo<List<StreamTask>> aliveStreamTaskList(TaskListReqVo taskListReqVo) {
+        StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(taskListReqVo.getApp())
+                .status(StreamTaskStatusEnum.PROCESSING.getCode()).build();
+        List<StreamTask> taskList = getStreamTask(streamTaskDto);
+        if(taskList == null || taskList.isEmpty()) {
+            return BaseResponseVo.ok(new ArrayList<>());
+        }
+
+        List<StreamTask> aliveTaskList = taskList.stream().filter(this::checkCacheAliveOrClearDead).collect(Collectors.toList());
+        return BaseResponseVo.ok(aliveTaskList);
     }
 }

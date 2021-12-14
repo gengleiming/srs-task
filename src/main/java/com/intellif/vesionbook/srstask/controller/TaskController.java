@@ -1,7 +1,9 @@
 package com.intellif.vesionbook.srstask.controller;
 
 import com.intellif.vesionbook.srstask.cache.StreamTaskCache;
+import com.intellif.vesionbook.srstask.model.entity.StreamTask;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
+import com.intellif.vesionbook.srstask.model.vo.req.TaskListReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.TaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.SyncReqVo;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 @RestController
 @Slf4j
@@ -47,5 +50,12 @@ public class TaskController {
     public BaseResponseVo<String> syncStreamTask(@RequestBody @Validated SyncReqVo syncReqVo) {
         log.info("req: {}", syncReqVo);
         return taskService.syncStreamTask(syncReqVo);
+    }
+
+    @ApiOperation(value = "获取正在运行流任务列表")
+    @PostMapping("/stream/task/alive/list")
+    public BaseResponseVo<List<StreamTask>> streamTaskList(@RequestBody @Validated TaskListReqVo taskListReqVo) {
+        log.info("req: {}", taskListReqVo);
+        return taskService.aliveStreamTaskList(taskListReqVo);
     }
 }
