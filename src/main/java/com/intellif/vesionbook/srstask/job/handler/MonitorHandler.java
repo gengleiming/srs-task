@@ -14,7 +14,7 @@ import javax.annotation.Resource;
 
 @Component
 @Slf4j
-@RegisterJobHandler(name = "MonitorHandler", cron = "0 * * * * ?", desc="流任务调度检测", author = "gengleiming")
+@RegisterJobHandler(name = "MonitorHandler", cron = "0 */1 * * * ?", desc="流任务调度检测", author = "gengleiming")
 @JobHandler(value = "MonitorHandler")
 public class MonitorHandler extends IJobHandler {
 
