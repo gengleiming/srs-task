@@ -1,4 +1,4 @@
-package com.intellif.vesionbook.srstask.jobhandler;
+package com.intellif.vesionbook.srstask.job.handler;
 
 import com.intellif.vesionbook.srstask.cache.StreamTaskCache;
 import com.intellif.vesionbook.srstask.service.TaskService;
@@ -25,6 +25,7 @@ public class MonitorHandler extends IJobHandler {
 
     @Override
     public ReturnT<String> execute(String s) {
+        log.info("monitor job task.");
         try {
             XxlJobLogger.log("stream cache process: {}, thread: {}", streamTaskCache.getProcessMap(), streamTaskCache.getThreadMap());
             Integer recover = taskService.recoverForeverStreamTask();
