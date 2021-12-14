@@ -190,18 +190,21 @@ public class TaskServiceImpl implements TaskService {
 
         List<StreamTask> tasks = getStreamTask(streamTaskDto);
 
+        // 关闭缓存
         StreamTask task = StreamTask.builder().app(app).uniqueId(uniqueId).build();
         checkCacheAliveOrClearDead(task);
 
+        // 关闭db
         if (tasks.isEmpty()) {
             log.error("数据库未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
+            return BaseResponseVo.ok();
         }
 
         if (tasks.size() > 1) {
             log.error("发现重复的流任务 stream tasks: {}", tasks);
         }
 
-        StreamTask streamTask = tasks.get(0);
+//        StreamTask streamTask = tasks.get(0);
 
         // 关闭
         StreamTaskDto taskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId).service(serverConfig.getServiceId())
