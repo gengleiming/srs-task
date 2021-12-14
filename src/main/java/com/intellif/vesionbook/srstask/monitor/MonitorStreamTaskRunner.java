@@ -11,7 +11,7 @@ import javax.annotation.Resource;
 
 @Component
 @Slf4j
-public class MonitorRunner implements ApplicationRunner {
+public class MonitorStreamTaskRunner implements ApplicationRunner {
 
     @Resource
     private TaskService taskService;
