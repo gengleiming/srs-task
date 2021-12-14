@@ -33,6 +33,8 @@ public class FFCommandHelper {
         //拉流推流，视频转码
         LinkedList<String> ffmpegCmdList = new LinkedList<>();
         ffmpegCmdList.add("ffmpeg");
+        ffmpegCmdList.add("-v");
+        ffmpegCmdList.add(serverConfig.getFfmpegLogLevel());
         ffmpegCmdList.add("-re");
         ffmpegCmdList.add("-rtsp_transport");
         ffmpegCmdList.add("tcp");

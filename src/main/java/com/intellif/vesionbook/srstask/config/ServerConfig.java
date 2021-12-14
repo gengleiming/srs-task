@@ -21,4 +21,7 @@ public class ServerConfig {
 
     @Value("${stream.pool.limit:100}")
     private Integer streamPoolLimit;
+
+    @Value("${stream.ffmpeg.log:warning}")
+    private String ffmpegLogLevel;
 }
