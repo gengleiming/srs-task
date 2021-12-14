@@ -20,19 +20,15 @@ public class MonitorRunner implements ApplicationRunner {
     private StreamTaskCache streamTaskCache;
 
     @Override
-    public void run(ApplicationArguments var) throws InterruptedException {
-        do {
-            Thread.sleep(1000);
-            try {
-                log.info("stream cache process: {}, thread: {}", streamTaskCache.getProcessMap(), streamTaskCache.getThreadMap());
-                Integer recover = taskService.recoverForeverStreamTask();
-                log.info("monitor recover success: {}", recover);
-                Integer dead = taskService.closeDeadStreamTask();
-                log.info("monitor close dead: {}", dead);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            Thread.sleep(60000);
-        } while (true);
+    public void run(ApplicationArguments var) {
+        try {
+            log.info("stream cache process: {}, thread: {}", streamTaskCache.getProcessMap(), streamTaskCache.getThreadMap());
+            Integer recover = taskService.recoverForeverStreamTask();
+            log.info("monitor recover success: {}", recover);
+            Integer dead = taskService.closeDeadStreamTask();
+            log.info("monitor close dead: {}", dead);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
