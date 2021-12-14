@@ -31,21 +31,21 @@ public class TaskController {
     @ApiOperation(value = "创建流任务")
     @PostMapping("/get/or/create/stream/task")
     public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(@RequestBody @Validated TaskReqVo taskReqVo) {
-        log.info("process number: {}, thread number: {}", streamTaskCache.getProcessNumber(), streamTaskCache.getThreadNumber());
+        log.info("req: {}", taskReqVo);
         return taskService.getOrCreateStreamTask(taskReqVo);
     }
 
     @ApiOperation(value = "关闭流任务")
     @PostMapping("/close/stream/task")
     public BaseResponseVo<String> closeStreamTask(@RequestBody @Validated CloseTaskReqVo closeTaskReqVo) {
-        log.info("process number: {}, thread number: {}", streamTaskCache.getProcessNumber(), streamTaskCache.getThreadNumber());
+        log.info("req: {}", closeTaskReqVo);
         return taskService.closeStreamTask(closeTaskReqVo);
     }
 
     @ApiOperation(value = "同步流任务")
     @PostMapping("/sync/stream/task")
     public BaseResponseVo<String> syncStreamTask(@RequestBody @Validated SyncReqVo syncReqVo) {
-        log.info("process number: {}, thread number: {}", streamTaskCache.getProcessNumber(), streamTaskCache.getThreadNumber());
+        log.info("req: {}", syncReqVo);
         return taskService.syncStreamTask(syncReqVo);
     }
 }
