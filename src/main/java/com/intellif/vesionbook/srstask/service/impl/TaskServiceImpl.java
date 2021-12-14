@@ -422,10 +422,10 @@ public class TaskServiceImpl implements TaskService {
             Set<String> cacheList = threadMap.keySet();
 
             for (TaskReqVo taskVo : taskVos) {
-                String uniqueId = streamTaskCache.getTaskThreadKey(app, taskVo.getUniqueId());
+                String key = streamTaskCache.getTaskThreadKey(app, taskVo.getUniqueId());
 
-                if(!cacheList.contains(uniqueId)) {
-                    createCacheTask(taskVo.getOriginStream(), app, uniqueId);
+                if(!cacheList.contains(key)) {
+                    createCacheTask(taskVo.getOriginStream(), app, taskVo.getUniqueId());
                 }
             }
         } else {
@@ -433,10 +433,10 @@ public class TaskServiceImpl implements TaskService {
             Set<String> cacheList = processMap.keySet();
 
             for (TaskReqVo taskVo : taskVos) {
-                String uniqueId = streamTaskCache.getTaskKey(app, taskVo.getUniqueId());
+                String key = streamTaskCache.getTaskKey(app, taskVo.getUniqueId());
 
-                if(!cacheList.contains(uniqueId)) {
-                    createCacheTask(taskVo.getOriginStream(), app, uniqueId);
+                if(!cacheList.contains(key)) {
+                    createCacheTask(taskVo.getOriginStream(), app, taskVo.getUniqueId());
                 }
             }
 

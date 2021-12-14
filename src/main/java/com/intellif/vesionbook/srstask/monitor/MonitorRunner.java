@@ -1,5 +1,6 @@
 package com.intellif.vesionbook.srstask.monitor;
 
+import com.intellif.vesionbook.srstask.cache.StreamTaskCache;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -15,10 +16,14 @@ public class MonitorRunner implements ApplicationRunner {
     @Resource
     private TaskService taskService;
 
+    @Resource
+    private StreamTaskCache streamTaskCache;
+
     @Override
     public void run(ApplicationArguments var) throws InterruptedException {
         do {
             try {
+                log.info("stream cache process: {}, thread: {}", streamTaskCache.getProcessMap(), streamTaskCache.getThreadMap());
                 Integer recover = taskService.recoverForeverStreamTask();
                 log.info("monitor recover success: {}", recover);
                 Integer dead = taskService.closeDeadStreamTask();
