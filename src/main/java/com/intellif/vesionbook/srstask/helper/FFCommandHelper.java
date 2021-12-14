@@ -71,7 +71,7 @@ public class FFCommandHelper {
 }
 
 class PrintStream extends Thread {
-    java.io.InputStream __is = null;
+    java.io.InputStream __is;
 
     public PrintStream(java.io.InputStream is) {
         __is = is;
@@ -80,7 +80,7 @@ class PrintStream extends Thread {
     @Override
     public void run() {
         try {
-            while (this != null) {
+            while (true) {
                 int _ch = __is.read();
                 if (_ch != -1) {
                     System.out.print((char) _ch);

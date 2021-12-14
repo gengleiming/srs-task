@@ -22,6 +22,7 @@ public class MonitorRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments var) throws InterruptedException {
         do {
+            Thread.sleep(1000);
             try {
                 log.info("stream cache process: {}, thread: {}", streamTaskCache.getProcessMap(), streamTaskCache.getThreadMap());
                 Integer recover = taskService.recoverForeverStreamTask();
