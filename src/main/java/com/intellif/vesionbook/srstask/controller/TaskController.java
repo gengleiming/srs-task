@@ -28,9 +28,6 @@ public class TaskController {
     @Resource
     private TaskService taskService;
 
-    @Resource
-    private StreamTaskCache streamTaskCache;
-
     @ApiOperation(value = "创建流任务")
     @PostMapping("/get/or/create/stream/task")
     public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(@RequestBody @Validated TaskReqVo taskReqVo) {

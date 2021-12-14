@@ -298,7 +298,6 @@ public class TaskServiceImpl implements TaskService {
     }
 
     public List<StreamTask> getStreamTask(StreamTaskDto streamTaskDto) {
-        log.info("get mysql stream task: {}", streamTaskDto);
         List<StreamTask> streamTasks = streamTaskMapper.selectByParam(streamTaskDto);
         if (streamTasks == null) {
             return new ArrayList<>();
