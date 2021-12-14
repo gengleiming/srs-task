@@ -23,5 +23,6 @@ public class StreamTaskDto {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Boolean lock;
-    private List<String> uniqueIdList;
+    private List<Long> idList;
+    private Integer oldStatus;
 }

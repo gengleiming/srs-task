@@ -13,7 +13,7 @@ import com.intellif.vesionbook.srstask.model.entity.StreamTask;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
 import com.intellif.vesionbook.srstask.model.vo.req.TaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
-import com.intellif.vesionbook.srstask.model.vo.req.SyncTaskReqVo;
+import com.intellif.vesionbook.srstask.model.vo.req.SyncReqVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
@@ -323,23 +323,24 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public BaseResponseVo<String> syncStreamTask(SyncTaskReqVo syncTaskReqVo) {
-        String app = syncTaskReqVo.getApp();
+    public BaseResponseVo<String> syncStreamTask(SyncReqVo syncReqVo) {
+        String app = syncReqVo.getApp();
 
         StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).service(serverConfig.getServiceId())
                 .status(StreamTaskStatusEnum.PROCESSING.getCode()).lock(true).build();
 
-        List<StreamTask> tasks = getStreamTask(streamTaskDto);
-        List<String> dbAliveList = tasks.stream().map(StreamTask::getUniqueId).collect(Collectors.toList());
+        List<StreamTask> dbAliveTasks = getStreamTask(streamTaskDto);
 
-        List<TaskReqVo> reqTaskList = syncTaskReqVo.getTaskList();
-        List<String> uniqueIdList = reqTaskList.stream().map(TaskReqVo::getUniqueId).collect(Collectors.toList());
+        List<TaskReqVo> reqTaskList = syncReqVo.getAliveTaskList();
+        List<String> reqUniqueIdList = reqTaskList.stream().map(TaskReqVo::getUniqueId).collect(Collectors.toList());
         // 先关闭缓存中不该存在的流任务
-        closeCacheFromClient(app, uniqueIdList);
+        closeCacheFromClient(app, reqUniqueIdList);
         // 关闭数据库不该存在的任务
-        List<String> shouldDeadList = dbAliveList.stream().filter(item->!uniqueIdList.contains(item)).collect(Collectors.toList());
-        if(shouldDeadList.size()>0) {
-            StreamTaskDto updateTask = StreamTaskDto.builder().uniqueIdList(shouldDeadList).status(StreamTaskStatusEnum.CLOSED.getCode()).build();
+        List<Long> shouldDeadIdList = dbAliveTasks.stream().filter(item->!reqUniqueIdList.contains(item.getUniqueId())).
+                map(StreamTask::getId).collect(Collectors.toList());
+        if(shouldDeadIdList.size()>0) {
+            StreamTaskDto updateTask = StreamTaskDto.builder().idList(shouldDeadIdList)
+                    .status(StreamTaskStatusEnum.CLOSED.getCode()).build();
             streamTaskMapper.updateStatus(updateTask);
         }
 
@@ -352,7 +353,9 @@ public class TaskServiceImpl implements TaskService {
         startCacheFromClient(app, reqTaskList);
 
         // 批量插入应该存活的任务
-        List<TaskReqVo> voList = syncTaskReqVo.getTaskList().stream().filter(item -> !dbAliveList.contains(item.getUniqueId())).collect(Collectors.toList());
+        List<String> dbAliveUniqueList = dbAliveTasks.stream().map(StreamTask::getUniqueId).collect(Collectors.toList());
+        List<TaskReqVo> voList = syncReqVo.getAliveTaskList().stream().filter(item -> !dbAliveUniqueList.contains(item.getUniqueId()))
+                .collect(Collectors.toList());
         List<StreamTask> insertList = new ArrayList<>();
         for(TaskReqVo vo: voList) {
             String rtmpOutput = getOutputStream(app, vo.getUniqueId(), StreamOutputTypeEnum.RTMP.getCode());

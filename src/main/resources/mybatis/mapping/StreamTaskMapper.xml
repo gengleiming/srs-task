@@ -167,10 +167,10 @@
             <if test="updateTime != null and updateTime != ''">
                 and update_time = #{updateTime,jdbcType=TIMESTAMP}
             </if>
-            <if test="uniqueIdList != null and uniqueIdList != ''">
-                and unique_id in
-                <foreach collection="uniqueIdList" item="uniqueId" index="index" open="(" close=")" separator=",">
-                    #{uniqueId}
+            <if test="idList != null and idList != ''">
+                and id in
+                <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+                    #{id}
                 </foreach>
             </if>
         </where>
