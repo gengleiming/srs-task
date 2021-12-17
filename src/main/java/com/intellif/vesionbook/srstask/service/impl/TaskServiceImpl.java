@@ -186,17 +186,16 @@ public class TaskServiceImpl implements TaskService {
         String originStream = closeTaskReqVo.getOriginStream();
 
         StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId).service(serverConfig.getServiceId())
-                .status(StreamTaskStatusEnum.PROCESSING.getCode()).lock(true).build();
+                .status(StreamTaskStatusEnum.PROCESSING.getCode()).originStream(originStream).lock(true).build();
 
         List<StreamTask> tasks = getStreamTask(streamTaskDto);
 
         // 关闭缓存
-        StreamTask task = StreamTask.builder().app(app).uniqueId(uniqueId).build();
-        checkCacheAliveOrClearDead(task);
+        closeCache(app, uniqueId);
 
         // 关闭db
         if (tasks.isEmpty()) {
-            log.error("数据库未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
+            log.info("数据库未发现该流任务 app: {}, uniqueId: {}, originStream: {}", app, uniqueId, originStream);
             return BaseResponseVo.ok();
         }
 

@@ -70,6 +70,7 @@ public class FFCommandHelper {
     }
 }
 
+@Slf4j
 class PrintStream extends Thread {
     java.io.InputStream __is;
 
@@ -89,7 +90,7 @@ class PrintStream extends Thread {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.info("ignore error when close stream. ffmpeg print stream exception: {}", e.getMessage());
         }
     }
 }

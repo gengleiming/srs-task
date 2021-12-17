@@ -28,7 +28,7 @@ public class TaskController {
     @Resource
     private TaskService taskService;
 
-    @ApiOperation(value = "创建流任务")
+    @ApiOperation(value = "获取或创建流任务")
     @PostMapping("/get/or/create/stream/task")
     public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(@RequestBody @Validated TaskReqVo taskReqVo) {
         log.info("req: {}", taskReqVo);

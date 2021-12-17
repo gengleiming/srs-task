@@ -1,9 +1,11 @@
 package com.intellif.vesionbook.srstask.model.vo.req;
 
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class CloseTaskReqVo {
     @ApiModelProperty(value = "应用ID", required = true, example = "garden")
     private String app;
