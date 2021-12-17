@@ -28,14 +28,14 @@ public class ScheduledTask {
      */
     @Scheduled(initialDelay = 600000, fixedDelay = 60000)
     public void checkStreamAndCloseUnused() {
-        log.info("开始检测流任务客户端连接数...");
+        log.info("scheduled 开始检测流任务客户端连接数...");
         GetStreamFromSrsRspVo response = srsClient.getStreams();
         if(response.getCode() != 0) {
             log.error("srs api server return error. response: {}", response);
             return;
         }
         List<GetStreamFromSrsRspVo.StreamData> streams = response.getStreams();
-        log.info("streams: {}", streams);
+        log.info("scheduled all streams: {}", streams);
         for(GetStreamFromSrsRspVo.StreamData stream: streams) {
             String key = stream.getApp() + "-" + stream.getName();
 
@@ -55,6 +55,7 @@ public class ScheduledTask {
             }
 
             CloseTaskReqVo reqVo = CloseTaskReqVo.builder().app(stream.getApp()).uniqueId(stream.getName()).build();
+            log.info("scheduled关闭流. stream: {}", stream);
             taskService.closeStreamTask(reqVo);
 
             deadCountMap.remove(key);
