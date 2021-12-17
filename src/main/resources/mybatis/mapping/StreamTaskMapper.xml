@@ -161,6 +161,9 @@
             <if test="forever != null">
                 and forever = #{forever,jdbcType=TINYINT}
             </if>
+            <if test="oldStatus != null">
+                and status = #{oldStatus,jdbcType=TINYINT}
+            </if>
             <if test="createTime != null and createTime != ''">
                 and create_time = #{createTime,jdbcType=TIMESTAMP}
             </if>

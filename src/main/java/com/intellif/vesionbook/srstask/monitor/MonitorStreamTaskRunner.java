@@ -23,9 +23,9 @@ public class MonitorStreamTaskRunner implements ApplicationRunner {
     public void run(ApplicationArguments var) {
         try {
             log.info("stream cache process: {}, thread: {}", streamTaskCache.getProcessMap(), streamTaskCache.getThreadMap());
-            Integer recover = taskService.recoverForeverStreamTask();
-            log.info("monitor recover success: {}", recover);
-            Integer dead = taskService.closeDeadStreamTask();
+//            Integer recover = taskService.recoverForeverStreamTask();
+//            log.info("monitor recover success: {}", recover);
+            Integer dead = taskService.cleanOldTaskWhileStart();
             log.info("monitor close dead: {}", dead);
         } catch (Exception e) {
             e.printStackTrace();

@@ -204,8 +204,6 @@ public class TaskServiceImpl implements TaskService {
             log.error("发现重复的流任务 stream tasks: {}", tasks);
         }
 
-//        StreamTask streamTask = tasks.get(0);
-
         // 关闭
         StreamTaskDto taskDto = StreamTaskDto.builder().app(app).uniqueId(uniqueId).service(serverConfig.getServiceId())
                 .status(StreamTaskStatusEnum.CLOSED.getCode()).build();
@@ -257,21 +255,17 @@ public class TaskServiceImpl implements TaskService {
         return false;
     }
 
+    /**
+     * 服务启动的时候，关闭旧任务
+     * @return
+     */
     @Override
-    public Integer closeDeadStreamTask() {
+    public Integer cleanOldTaskWhileStart() {
         StreamTaskDto streamTaskDto = StreamTaskDto.builder().service(serverConfig.getServiceId())
-                .status(StreamTaskStatusEnum.PROCESSING.getCode()).forever(0).lock(true).build();
+                .oldStatus(StreamTaskStatusEnum.PROCESSING.getCode()).status(StreamTaskStatusEnum.CLOSED.getCode()).lock(true).build();
 
-        List<StreamTask> streamTasks = getStreamTask(streamTaskDto);
-        int dead = 0;
-        for (StreamTask task : streamTasks) {
-            Boolean ok = closeDeadTask(task);
-            if (ok) {
-                dead += 1;
-            }
-        }
+        return streamTaskMapper.updateStatus(streamTaskDto);
 
-        return dead;
     }
 
     public Boolean closeDeadTask(StreamTask task) {

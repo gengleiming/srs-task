@@ -20,7 +20,7 @@ public interface TaskService {
 
     Integer recoverForeverStreamTask();
 
-    Integer closeDeadStreamTask();
+    Integer cleanOldTaskWhileStart();
 
     BaseResponseVo<List<StreamTask>> aliveStreamTaskList(TaskListReqVo taskListReqVo);
 
