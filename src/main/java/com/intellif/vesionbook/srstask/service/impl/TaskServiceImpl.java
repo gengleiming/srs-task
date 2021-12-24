@@ -7,6 +7,7 @@ import com.intellif.vesionbook.srstask.enums.StreamOutputTypeEnum;
 import com.intellif.vesionbook.srstask.enums.StreamTaskStatusEnum;
 import com.intellif.vesionbook.srstask.helper.FFCommandHelper;
 import com.intellif.vesionbook.srstask.helper.JavaCVHelper;
+import com.intellif.vesionbook.srstask.helper.SrsClientHelper;
 import com.intellif.vesionbook.srstask.mapper.StreamTaskMapper;
 import com.intellif.vesionbook.srstask.model.dto.StreamTaskDto;
 import com.intellif.vesionbook.srstask.model.entity.StreamTask;
@@ -16,6 +17,7 @@ import com.intellif.vesionbook.srstask.model.vo.req.TaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.SyncReqVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
+import com.intellif.vesionbook.srstask.model.vo.rsp.GetGBDataFromSrsRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,6 +49,9 @@ public class TaskServiceImpl implements TaskService {
     @Resource
     FFCommandHelper ffCommandHelper;
 
+    @Resource
+    SrsClientHelper srsClientHelper;
+
 
     @Override
     @Transactional
@@ -56,7 +61,6 @@ public class TaskServiceImpl implements TaskService {
         String uniqueId = taskReqVo.getUniqueId();
         String originStream = taskReqVo.getOriginStream();
         Integer outputType = taskReqVo.getOutputType();
-        Integer forever = Optional.ofNullable(taskReqVo.getForever()).orElse(0);
 
         if (outputType != StreamOutputTypeEnum.RTMP.getCode() && outputType != StreamOutputTypeEnum.HTTP_HLV.getCode()
                 && outputType != StreamOutputTypeEnum.WEB_RTC.getCode() && outputType != StreamOutputTypeEnum.HLS.getCode()) {
@@ -98,7 +102,7 @@ public class TaskServiceImpl implements TaskService {
         StreamTask task = StreamTask.builder().app(app).uniqueId(uniqueId).originStream(originStream)
                 .service(serverConfig.getServiceId()).status(StreamTaskStatusEnum.PROCESSING.getCode())
                 .rtmpOutput(rtmpOutput).httpFlvOutput(httpFlvOutput).hlsOutput(hlsOutput).webrtcOutput(webrtcOutput)
-                .forever(forever).build();
+                .forever(0).build();
 
         if (tasks.size() == 0) {
             streamTaskMapper.insertSelective(task);
@@ -180,7 +184,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public BaseResponseVo<String> closeStreamTask(CloseTaskReqVo closeTaskReqVo) {
+    public BaseResponseVo<String> closeRtspStreamTask(CloseTaskReqVo closeTaskReqVo) {
         String app = closeTaskReqVo.getApp();
         String uniqueId = closeTaskReqVo.getUniqueId();
         String originStream = closeTaskReqVo.getOriginStream();
@@ -360,7 +364,7 @@ public class TaskServiceImpl implements TaskService {
             String hlsOutput = getOutputStream(app, vo.getUniqueId(), StreamOutputTypeEnum.HLS.getCode());
             StreamTask task = StreamTask.builder().originStream(vo.getOriginStream()).app(vo.getApp()).uniqueId(vo.getUniqueId())
                     .service(serverConfig.getServiceId()).status(StreamTaskStatusEnum.PROCESSING.getCode())
-                    .forever(vo.getForever()).httpFlvOutput(httpFlvOutput).rtmpOutput(rtmpOutput).webrtcOutput(webrtcOutput).hlsOutput(hlsOutput).build();
+                    .forever(0).httpFlvOutput(httpFlvOutput).rtmpOutput(rtmpOutput).webrtcOutput(webrtcOutput).hlsOutput(hlsOutput).build();
             insertList.add(task);
         }
 
@@ -450,5 +454,34 @@ public class TaskServiceImpl implements TaskService {
 
         List<StreamTask> aliveTaskList = taskList.stream().filter(this::checkCacheAliveOrClearDead).collect(Collectors.toList());
         return BaseResponseVo.ok(aliveTaskList);
+    }
+
+    /**
+     * 获取gb28181视频流
+     * @param taskReqVo
+     * @return
+     */
+    @Override
+    public BaseResponseVo<CreateTaskRspVo> getGBStream(TaskReqVo taskReqVo) {
+        if(taskReqVo.getChannelId()==null||taskReqVo.getChannelId().isEmpty()) {
+            log.error("req error, channel id is empty. req: {}", taskReqVo);
+            return BaseResponseVo.error(ReturnCodeEnum.PARAM_INVALID);
+        }
+        // srs服务器gb28181分支暂时不支持自定义app，固定live
+        taskReqVo.setApp("live");
+
+        Boolean success = srsClientHelper.inviteChannel(taskReqVo.getApp(), taskReqVo.getUniqueId(), taskReqVo.getChannelId());
+        if(!success) {
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_FAILED);
+        }
+
+        GetGBDataFromSrsRspVo.ChannelData gbChannelOne = srsClientHelper.getGBChannelOne(taskReqVo.getApp(),
+                taskReqVo.getUniqueId(), taskReqVo.getChannelId());
+        if(gbChannelOne == null) {
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_GB_CHANNEL);
+        }
+
+        CreateTaskRspVo vo = CreateTaskRspVo.builder().webrtcOutput(gbChannelOne.getWebrtc_url()).build();
+        return BaseResponseVo.ok(vo);
     }
 }

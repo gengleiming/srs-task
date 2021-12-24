@@ -14,7 +14,7 @@ import java.util.List;
 public interface TaskService {
 
     BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(TaskReqVo taskReqVo);
-    BaseResponseVo<String> closeStreamTask(CloseTaskReqVo closeTaskReqVo);
+    BaseResponseVo<String> closeRtspStreamTask(CloseTaskReqVo closeTaskReqVo);
 
     BaseResponseVo<String> syncStreamTask(SyncReqVo syncReqVo);
 
@@ -23,5 +23,7 @@ public interface TaskService {
     Integer cleanOldTaskWhileStart();
 
     BaseResponseVo<List<StreamTask>> aliveStreamTaskList(TaskListReqVo taskListReqVo);
+
+    BaseResponseVo<CreateTaskRspVo> getGBStream(TaskReqVo taskReqVo);
 
 }

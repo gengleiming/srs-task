@@ -24,4 +24,10 @@ public class ServerConfig {
 
     @Value("${stream.ffmpeg.log:warning}")
     private String ffmpegLogLevel;
+
+    @Value("${stream.support.type:rtsp,gb28181}")
+    private String supportType;
+
+    @Value("check.clients.limit:10000")
+    private String clientsLimit;
 }

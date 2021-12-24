@@ -1,6 +1,5 @@
 package com.intellif.vesionbook.srstask.controller;
 
-import com.intellif.vesionbook.srstask.cache.StreamTaskCache;
 import com.intellif.vesionbook.srstask.model.entity.StreamTask;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
 import com.intellif.vesionbook.srstask.model.vo.req.TaskListReqVo;
@@ -28,7 +27,7 @@ public class TaskController {
     @Resource
     private TaskService taskService;
 
-    @ApiOperation(value = "获取或创建流任务")
+    @ApiOperation(value = "获取或创建RTSP流任务")
     @PostMapping("/get/or/create/stream/task")
     public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(@RequestBody @Validated TaskReqVo taskReqVo) {
         log.info("req: {}", taskReqVo);
@@ -39,7 +38,7 @@ public class TaskController {
     @PostMapping("/close/stream/task")
     public BaseResponseVo<String> closeStreamTask(@RequestBody @Validated CloseTaskReqVo closeTaskReqVo) {
         log.info("req: {}", closeTaskReqVo);
-        return taskService.closeStreamTask(closeTaskReqVo);
+        return taskService.closeRtspStreamTask(closeTaskReqVo);
     }
 
     @ApiOperation(value = "同步流任务")
@@ -54,5 +53,12 @@ public class TaskController {
     public BaseResponseVo<List<StreamTask>> streamTaskList(@RequestBody @Validated TaskListReqVo taskListReqVo) {
         log.info("req: {}", taskListReqVo);
         return taskService.aliveStreamTaskList(taskListReqVo);
+    }
+
+    @ApiOperation(value = "GB28181获取流地址")
+    @PostMapping("/get/stream/gb28181")
+    public BaseResponseVo<CreateTaskRspVo> getOrCreateGB(@RequestBody @Validated TaskReqVo taskReqVo) {
+        log.info("gb28181 req: {}", taskReqVo);
+        return taskService.getGBStream(taskReqVo);
     }
 }
