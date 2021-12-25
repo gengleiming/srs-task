@@ -29,6 +29,6 @@ public class ServerConfig {
     private String supportType;
 
     // 3分钟之内推流和拉流的客户端总数，不能超过100个
-    @Value("clients.limit.3min:100")
-    private String clientsLimit;
+    @Value("clients.limit.min3:100")
+    private Integer clientsLimit;
 }

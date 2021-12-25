@@ -29,7 +29,7 @@ public class CallbackController {
     public int getOrCreateStreamTask(@RequestBody @Validated SRSCallbackVo reqVo) {
         log.info("req: {}", reqVo);
         Integer clientsNum = srsClientHelper.getClientsNum();
-        if(clientsNum >= Integer.parseInt(serverConfig.getClientsLimit())){
+        if(clientsNum >= serverConfig.getClientsLimit()){
             log.error("on play. client num limit, client num: {}", clientsNum);
             return -1;
         }

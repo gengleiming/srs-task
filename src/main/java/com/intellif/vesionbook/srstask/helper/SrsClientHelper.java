@@ -156,7 +156,7 @@ public class SrsClientHelper {
         if(clientsNum == null) {
             return -1;
         }
-        if(clientsNum >= Integer.parseInt(serverConfig.getClientsLimit())) {
+        if(clientsNum >= serverConfig.getClientsLimit()) {
             log.error("invite client limit. device id: {}, channel id: {}, client num: {}", deviceId, channelId, clientsNum);
             return 1;
         }
@@ -189,7 +189,7 @@ public class SrsClientHelper {
     }
 
     public List<GetClientsFromSrsRspVo.ClientData> getAllClients() {
-        GetClientsFromSrsRspVo clientResponse = srsClient.getClients("0", serverConfig.getClientsLimit());
+        GetClientsFromSrsRspVo clientResponse = srsClient.getClients("0", serverConfig.getClientsLimit().toString());
         if(clientResponse.getCode() != 0) {
             log.error("srs get clients return error. response: {}", clientResponse);
             return null;
