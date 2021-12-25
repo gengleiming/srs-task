@@ -3,7 +3,6 @@ package com.intellif.vesionbook.srstask.controller;
 import com.intellif.vesionbook.srstask.config.ServerConfig;
 import com.intellif.vesionbook.srstask.helper.SrsClientHelper;
 import com.intellif.vesionbook.srstask.model.vo.req.SRSCallbackVo;
-import com.mysql.fabric.Server;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
