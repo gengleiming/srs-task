@@ -28,6 +28,7 @@ public class ServerConfig {
     @Value("${stream.support.type:rtsp,gb28181}")
     private String supportType;
 
+    // 3分钟之内推流和拉流的客户端总数，不能超过100个
     @Value("clients.limit.3min:100")
     private String clientsLimit;
 }

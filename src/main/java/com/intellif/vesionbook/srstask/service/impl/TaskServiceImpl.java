@@ -471,7 +471,7 @@ public class TaskServiceImpl implements TaskService {
         taskReqVo.setApp("live");
 
         Boolean success = srsClientHelper.inviteChannel(taskReqVo.getApp(), taskReqVo.getUniqueId(), taskReqVo.getChannelId());
-        if(!success) {
+        if(success==null || !success) {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_FAILED);
         }
 

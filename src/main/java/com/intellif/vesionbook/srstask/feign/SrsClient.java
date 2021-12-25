@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@FeignClient(value = "srs", url = "${srs.api.url:http://192.168.18.151:1985}")
+@FeignClient(value = "srs", url = "${srs.api.url}")
 public interface SrsClient {
     @GetMapping(value = "/api/v1/streams")
     GetStreamFromSrsRspVo getStreams();
