@@ -484,7 +484,19 @@ public class TaskServiceImpl implements TaskService {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_GB_CHANNEL);
         }
 
-        CreateTaskRspVo vo = CreateTaskRspVo.builder().webrtcOutput(gbChannelOne.getWebrtc_url()).build();
+        CreateTaskRspVo vo = new CreateTaskRspVo();
+        Integer outputType = taskReqVo.getOutputType();
+            if(outputType == StreamOutputTypeEnum.WEB_RTC.getCode()) {
+                vo.setWebrtcOutput(gbChannelOne.getWebrtc_url());
+            } else if(outputType == StreamOutputTypeEnum.HTTP_HLV.getCode()) {
+                vo.setWebrtcOutput(gbChannelOne.getFlv_url());
+            } else if(outputType == StreamOutputTypeEnum.HLS.getCode()) {
+                vo.setWebrtcOutput(gbChannelOne.getHls_url());
+            } else if(outputType == StreamOutputTypeEnum.RTMP.getCode()) {
+                vo.setWebrtcOutput(gbChannelOne.getRtmp_url());
+            } else {
+                return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_TYPE_NOT_SUPPORT);
+        }
         return BaseResponseVo.ok(vo);
     }
 }
