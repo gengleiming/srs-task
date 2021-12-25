@@ -28,6 +28,6 @@ public class ServerConfig {
     @Value("${stream.support.type:rtsp,gb28181}")
     private String supportType;
 
-    @Value("check.clients.limit:10000")
+    @Value("clients.limit.3min:100")
     private String clientsLimit;
 }
