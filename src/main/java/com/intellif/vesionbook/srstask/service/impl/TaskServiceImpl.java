@@ -470,9 +470,12 @@ public class TaskServiceImpl implements TaskService {
         // srs服务器gb28181分支暂时不支持自定义app，固定live
         taskReqVo.setApp("live");
 
-        Boolean success = srsClientHelper.inviteChannel(taskReqVo.getApp(), taskReqVo.getUniqueId(), taskReqVo.getChannelId());
-        if(success==null || !success) {
+        Integer result = srsClientHelper.inviteChannel(taskReqVo.getApp(), taskReqVo.getUniqueId(), taskReqVo.getChannelId());
+        if(result == -1){
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_FAILED);
+        }
+        if(result == 1) {
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_CLIENTS_LIMIT);
         }
 
         GetGBDataFromSrsRspVo.ChannelData gbChannelOne = srsClientHelper.getGBChannelOne(taskReqVo.getApp(),

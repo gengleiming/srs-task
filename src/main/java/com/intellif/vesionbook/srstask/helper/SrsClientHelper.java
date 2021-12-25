@@ -47,15 +47,13 @@ public class SrsClientHelper {
             return streams;
         }
 
-        GetClientsFromSrsRspVo clientResponse = srsClient.getClients("0", serverConfig.getClientsLimit());
-        if(clientResponse.getCode() != 0) {
-            log.error("srs get clients return error. response: {}", clientResponse);
+        List<GetClientsFromSrsRspVo.ClientData> clients = getAllClients();
+
+        if(clients == null) {
             return null;
         }
 
-        List<GetClientsFromSrsRspVo.ClientData> clients = clientResponse.getClients();
-
-        if(clients == null || clients.isEmpty()) {
+        if(clients.isEmpty()) {
             return streams;
         }
 
@@ -118,49 +116,65 @@ public class SrsClientHelper {
         return channels.get(0);
     }
 
-    public Boolean inviteChannel(String app, String deviceId, String channelId) {
+    /**
+     *
+     * @param app
+     * @param deviceId
+     * @param channelId
+     * @return 0:成功 -1:失败 1:客户端数量超限
+     */
+    public Integer inviteChannel(String app, String deviceId, String channelId) {
         GetGBDataFromSrsRspVo response;
         if(deviceId==null|| deviceId.isEmpty() || channelId ==null || channelId.isEmpty()) {
             log.error("param error. device id: {}, channel id: {}", deviceId, channelId);
-            return null;
+            return -1;
         }
         response = srsClient.getGBData("sip_query_session", deviceId, null);
 
         if(response.getCode() != 0) {
             log.error("query session error. response: {}", response);
-            return null;
+            return -1;
         }
 
         List<GetGBDataFromSrsRspVo.SessionData> sessions = response.getData().getSessions();
         if(sessions == null || sessions.isEmpty()) {
             log.error("device not registered. please register first. sessions: {}", sessions);
-            return null;
+            return -1;
         }
 
         List<GetGBDataFromSrsRspVo.DeviceData> devices = sessions.get(0).getDevices();
         if(devices==null || devices.isEmpty()) {
             log.error("device not registered. please register first. devices: {}", devices);
-            return null;
+            return -1;
         }
         boolean inviteOk = devices.get(0).getInvite_status().equals("InviteOk");
         if(inviteOk) {
-            return true;
+            return 0;
         }
 
+        Integer clientsNum = getClientsNum();
+        if(clientsNum == null) {
+            return -1;
+        }
+        if(clientsNum >= Integer.parseInt(serverConfig.getClientsLimit())) {
+            log.error("invite client limit. device id: {}, channel id: {}, client num: {}", deviceId, channelId, clientsNum);
+            return 1;
+        }
+        // 新增推流，通知设备推流
         GetGBDataFromSrsRspVo getGBDataFromSrsRspVo = srsClient.getGBData("sip_invite", deviceId, channelId);
         if(getGBDataFromSrsRspVo.getCode() == SrsReturnCodeEnum.ERROR_SIP_INVITE_SUCCESS_BEFORE.getResultCode()) {
             log.info("invite success before. device id: {}, channel id: {}, response: {}", deviceId, channelId, getGBDataFromSrsRspVo);
-            return true;
+            return 0;
         }
 
         if(getGBDataFromSrsRspVo.getCode() != 0) {
             log.error("invite error. device id: {}, channel id: {}, response: {}", deviceId, channelId, getGBDataFromSrsRspVo);
-            return false;
+            return -1;
         }
 
         log.info("invite success. device id: {}, channel id: {}, response: {}", deviceId, channelId, getGBDataFromSrsRspVo);
 
-        return true;
+        return 0;
     }
 
     public Boolean kickOffClient(String clientId) {
@@ -172,6 +186,67 @@ public class SrsClientHelper {
         log.error("kick client failed. response: {}", data);
         return false;
 
+    }
+
+    public List<GetClientsFromSrsRspVo.ClientData> getAllClients() {
+        GetClientsFromSrsRspVo clientResponse = srsClient.getClients("0", serverConfig.getClientsLimit());
+        if(clientResponse.getCode() != 0) {
+            log.error("srs get clients return error. response: {}", clientResponse);
+            return null;
+        }
+
+        List<GetClientsFromSrsRspVo.ClientData> clients = clientResponse.getClients();
+        if(clients == null || clients.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return clients;
+    }
+
+    public List<GetGBDataFromSrsRspVo.SessionData> getAllGBSessions() {
+        GetGBDataFromSrsRspVo response = srsClient.getGBData("sip_query_session", null, null);
+
+        if(response.getCode() != 0) {
+            log.error("query session error. response: {}", response);
+            return null;
+        }
+
+        List<GetGBDataFromSrsRspVo.SessionData> sessions = response.getData().getSessions();
+        if(sessions == null) {
+            log.info("get session null. response: {}", response);
+            return new ArrayList<>();
+        }
+
+        return sessions;
+
+    }
+
+    public Integer getClientsNum() {
+        List<GetClientsFromSrsRspVo.ClientData> clients = getAllClients();
+        if(clients == null) {
+            return null;
+        }
+
+        // 播放端客户端数量 + 除了gb28181的发布端数量
+        int total = clients.size();
+
+        // gb28181发布端数量
+        List<GetGBDataFromSrsRspVo.SessionData> sessions = getAllGBSessions();
+        if(sessions == null) {
+            return null;
+        }
+
+        int gbCount = 0;
+        for (GetGBDataFromSrsRspVo.SessionData session : sessions) {
+            List<GetGBDataFromSrsRspVo.DeviceData> devices = session.getDevices();
+            if(devices==null || devices.isEmpty()) {
+                continue;
+            }
+            long count = devices.stream().filter(item -> item.getInvite_status().equals("InviteOk") && item.getDevice_status().equals("ON")).count();
+            gbCount += count;
+        }
+
+        return total + gbCount;
     }
 
 }

@@ -27,12 +27,15 @@ public class ScheduledTask {
     private SrsClientHelper srsClientHelper;
 
     /**
-     * 启动服务10分钟之后，1分钟检测一次，检测流任务的客户端数量
+     * 启动服务3分钟之后，1分钟检测一次，检测流任务的客户端数量
      */
-    @Scheduled(initialDelay = 600000, fixedDelay = 60000)
+    @Scheduled(initialDelay = 180000, fixedDelay = 60000)
     public void checkStreamAndCloseUnused() {
         log.info("dead map: {}", deadMap);
         List<GetStreamFromSrsRspVo.StreamData> streamsWithNoClients = srsClientHelper.getStreamsWithNoClients();
+        if(streamsWithNoClients == null) {
+            return;
+        }
         List<String> streamIdList = streamsWithNoClients.stream().map(GetStreamFromSrsRspVo.StreamData::getId).collect(Collectors.toList());
         Set<String> keys = deadMap.keySet();
         List<String> removeList = keys.stream().filter(item->!streamIdList.contains(item)).collect(Collectors.toList());
