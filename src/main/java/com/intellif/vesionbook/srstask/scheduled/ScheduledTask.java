@@ -1,7 +1,5 @@
 package com.intellif.vesionbook.srstask.scheduled;
 
-import com.intellif.vesionbook.srstask.config.ServerConfig;
-import com.intellif.vesionbook.srstask.feign.SrsClient;
 import com.intellif.vesionbook.srstask.helper.SrsClientHelper;
 import com.intellif.vesionbook.srstask.model.dto.CacheDeadDto;
 import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
@@ -67,6 +65,7 @@ public class ScheduledTask {
     public void closeUnusedRtsp(Map<String, CacheDeadDto> deadMap) {
         log.info("scheduled 检测关闭 dead Rtsp...");
 
+        List<String> removeList = new ArrayList<>();
         for(Map.Entry<String, CacheDeadDto> entry: deadMap.entrySet()) {
             String key = entry.getKey();
             CacheDeadDto cacheDeadDto = entry.getValue();
@@ -78,6 +77,10 @@ public class ScheduledTask {
             log.info("scheduled关闭流. stream: {}", cacheDeadDto);
             taskService.closeRtspStreamTask(reqVo);
 
+            removeList.add(key);
+        }
+
+        for(String key: removeList) {
             deadMap.remove(key);
         }
     }
@@ -101,8 +104,8 @@ public class ScheduledTask {
                 String id = value.getName().split("@")[0];
                 String chid = value.getName().split("@")[1];
                 srsClientHelper.closeChannel(id, chid);
+                removeList.add(key);
             }
-            removeList.add(key);
         }
 
         for(String key: removeList) {
