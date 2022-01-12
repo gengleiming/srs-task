@@ -22,7 +22,7 @@ public interface SrsClient {
     @GetMapping(value = "/api/v1/clients")
     GetClientsFromSrsRspVo getClients(@RequestParam("start") String start, @RequestParam("count") String count);
 
-    @GetMapping(value = "/api/v1/gb28181", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/api/v1/gb28181")
     GetGBDataFromSrsRspVo getGBData(@RequestParam("action") String action, @RequestParam("id") String id,
                                     @RequestParam("chid") String chid);
 }

@@ -30,7 +30,7 @@ public class GetGBDataFromSrsRspVo {
     @Data
     public static class DeviceData {
         String device_id;
-        String device_name;
+//        String device_name;
         String device_status;
         String invite_status;
         Long invite_time;
