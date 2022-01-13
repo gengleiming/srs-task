@@ -126,6 +126,7 @@ job_fea_build:
     - docker push ${REG}/${PROJECT}/${IMAGE}:${TAG}
   only:
     - /^fea.*$/
+    - /^release.*$/
 
 job_orig_build:
   extends: .main
