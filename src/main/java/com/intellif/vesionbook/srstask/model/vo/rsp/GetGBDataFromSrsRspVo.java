@@ -1,7 +1,9 @@
 package com.intellif.vesionbook.srstask.model.vo.rsp;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -10,6 +12,8 @@ import java.util.List;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class GetGBDataFromSrsRspVo {
     private Long code;
     private ReturnData data;
@@ -30,7 +34,7 @@ public class GetGBDataFromSrsRspVo {
     @Data
     public static class DeviceData {
         String device_id;
-//        String device_name;
+        String device_name;
         String device_status;
         String invite_status;
         Long invite_time;
