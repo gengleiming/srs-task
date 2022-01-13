@@ -1,14 +1,11 @@
 package com.intellif.vesionbook.srstask.feign;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.intellif.vesionbook.srstask.model.vo.rsp.BaseSrsRspVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.GetClientsFromSrsRspVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.GetGBDataFromSrsRspVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.GetStreamFromSrsRspVo;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
