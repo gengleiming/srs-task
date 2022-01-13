@@ -10,4 +10,4 @@ if [ -n "$APOLLO_IP" ]; then
 fi
 
 # setup app
-java -Dfile.encoding=UTF-8 -jar /app/vesionbook-srs-task.jar
+java -jar /app/vesionbook-srs-task.jar

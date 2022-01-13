@@ -104,11 +104,12 @@ job_rel_build:
     - chmod -R +x *
     - docker build -t ${REG}/${PROJECT}/${IMAGE}:latest -t ${REG}/${PROJECT}/${IMAGE}:${TAG} .
     - docker login -u${APPHOUSE_USER} -p${APPHOUSE_PASSWD} ${REG}
-    - docker push ${REG}/${PROJECT}/${IMAGE}:latest
+#    - docker push ${REG}/${PROJECT}/${IMAGE}:latest
     - docker push ${REG}/${PROJECT}/${IMAGE}:${TAG}
   only:
     - /^dev.*$/
     - /^hotfix.*$/
+    - /^release.*$/
 
 job_fea_build:
   extends: .main
@@ -126,7 +127,6 @@ job_fea_build:
     - docker push ${REG}/${PROJECT}/${IMAGE}:${TAG}
   only:
     - /^fea.*$/
-    - /^release.*$/
 
 job_orig_build:
   extends: .main
