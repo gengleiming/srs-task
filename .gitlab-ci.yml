@@ -8,6 +8,7 @@
   only:
     - /^dev.*$/
     - /^fea.*$/
+    - /^release.*$/
     - /^hotfix.*$/
     - /^original.*$/
     - ci
