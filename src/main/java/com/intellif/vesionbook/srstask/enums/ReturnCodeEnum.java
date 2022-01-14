@@ -28,6 +28,8 @@ public enum ReturnCodeEnum {
     ERROR_STREAM_TASK_MAX_LIMIT(90000009, "stream task max limit", "流任务数量超出限制"),
     ERROR_GB_CHANNEL(90000010, "stream task gb channel error", "gb281818通道异常"),
     ERROR_STREAM_CLIENTS_LIMIT(90000011, "stream clients limit", "客户端数量超限"),
+    ERROR_STREAM_ONE_NULL(90000012, "get stream error", "流不存在"),
+    ERROR_STREAM_VIDEO(90000013, "stream video error", "获取流视频信息异常"),
     ;
 
     private final int resultCode;

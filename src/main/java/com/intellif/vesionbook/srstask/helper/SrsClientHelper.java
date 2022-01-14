@@ -132,7 +132,7 @@ public class SrsClientHelper {
         response = srsClient.getGBData("sip_query_session", deviceId, null);
 
         if(response.getCode() != 0) {
-            log.error("query session error. response: {}", response);
+            log.error("query device session error, device id: {}. response: {}", deviceId, response);
             return -1;
         }
 
@@ -207,7 +207,7 @@ public class SrsClientHelper {
         GetGBDataFromSrsRspVo response = srsClient.getGBData("sip_query_session", null, null);
 
         if(response.getCode() != 0) {
-            log.error("query session error. response: {}", response);
+            log.error("query all session error. response: {}", response);
             return null;
         }
 
@@ -247,6 +247,30 @@ public class SrsClientHelper {
         }
 
         return total + gbCount;
+    }
+
+    public GetStreamFromSrsRspVo.StreamData getStreamOne(String app, String uniqueId) {
+        List<GetStreamFromSrsRspVo.StreamData> streams = getAllStreams();
+        if(streams == null || streams.isEmpty()) {
+            log.error("query gb streams list null. unique id: {}", uniqueId);
+            return null;
+        }
+
+        List<GetStreamFromSrsRspVo.StreamData> channelStreams = streams.stream()
+                .filter(item -> item.getApp().equals(app) && item.getName().equals(uniqueId))
+                .collect(Collectors.toList());
+        if(channelStreams.isEmpty()) {
+            log.error("query gb stream null. unique id: {}", uniqueId);
+            return null;
+        }
+
+        if(channelStreams.size() > 1) {
+            log.error("query gb stream multi. unique id: {}, result: {}", uniqueId, channelStreams);
+            return null;
+        }
+
+        return channelStreams.get(0);
+
     }
 
 }

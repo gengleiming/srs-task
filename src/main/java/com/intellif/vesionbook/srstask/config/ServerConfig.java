@@ -19,6 +19,7 @@ public class ServerConfig {
     @Value("${stream.with.javacv:0}")
     private String useJavacv;
 
+    // 对rtsp数量限制
     @Value("${stream.pool.limit:100}")
     private Integer streamPoolLimit;
 

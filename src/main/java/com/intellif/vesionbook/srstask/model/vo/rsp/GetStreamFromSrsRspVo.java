@@ -27,12 +27,22 @@ public class GetStreamFromSrsRspVo {
         Long send_bytes;
         Long recv_bytes;
         StreamPublishData publish;
+        StreamVideoData video;
     }
 
     @Data
     public static class StreamPublishData {
         Boolean active;
         String cid;
+    }
+
+    @Data
+    public static class StreamVideoData {
+        String codec;
+        String profile;
+        String level;
+        Integer width;
+        Integer height;
     }
 
 }

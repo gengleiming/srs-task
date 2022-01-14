@@ -12,12 +12,10 @@ import com.intellif.vesionbook.srstask.mapper.StreamTaskMapper;
 import com.intellif.vesionbook.srstask.model.dto.StreamTaskDto;
 import com.intellif.vesionbook.srstask.model.entity.StreamTask;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
-import com.intellif.vesionbook.srstask.model.vo.req.TaskListReqVo;
-import com.intellif.vesionbook.srstask.model.vo.req.TaskReqVo;
-import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
-import com.intellif.vesionbook.srstask.model.vo.req.SyncReqVo;
+import com.intellif.vesionbook.srstask.model.vo.req.*;
 import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.GetGBDataFromSrsRspVo;
+import com.intellif.vesionbook.srstask.model.vo.rsp.GetStreamFromSrsRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -260,6 +258,7 @@ public class TaskServiceImpl implements TaskService {
 
     /**
      * 服务启动的时候，关闭旧任务
+     *
      * @return
      */
     @Override
@@ -336,16 +335,16 @@ public class TaskServiceImpl implements TaskService {
         // 先关闭缓存中不该存在的流任务
         closeCacheFromClient(app, reqUniqueIdList);
         // 关闭数据库不该存在的任务
-        List<Long> shouldDeadIdList = dbAliveTasks.stream().filter(item->!reqUniqueIdList.contains(item.getUniqueId())).
+        List<Long> shouldDeadIdList = dbAliveTasks.stream().filter(item -> !reqUniqueIdList.contains(item.getUniqueId())).
                 map(StreamTask::getId).collect(Collectors.toList());
-        if(shouldDeadIdList.size()>0) {
+        if (shouldDeadIdList.size() > 0) {
             StreamTaskDto updateTask = StreamTaskDto.builder().idList(shouldDeadIdList)
                     .status(StreamTaskStatusEnum.CLOSED.getCode()).build();
             streamTaskMapper.updateStatus(updateTask);
         }
 
         // 开启缓存中应该存在的流任务
-        if(getLeftStreamSpace() <= 0) {
+        if (getLeftStreamSpace() <= 0) {
             log.error("sync error. There is no space left.");
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_MAX_LIMIT);
         }
@@ -357,7 +356,7 @@ public class TaskServiceImpl implements TaskService {
         List<TaskReqVo> voList = syncReqVo.getAliveTaskList().stream().filter(item -> !dbAliveUniqueList.contains(item.getUniqueId()))
                 .collect(Collectors.toList());
         List<StreamTask> insertList = new ArrayList<>();
-        for(TaskReqVo vo: voList) {
+        for (TaskReqVo vo : voList) {
             String rtmpOutput = getOutputStream(app, vo.getUniqueId(), StreamOutputTypeEnum.RTMP.getCode());
             String httpFlvOutput = getOutputStream(app, vo.getUniqueId(), StreamOutputTypeEnum.HTTP_HLV.getCode());
             String webrtcOutput = getOutputStream(app, vo.getUniqueId(), StreamOutputTypeEnum.WEB_RTC.getCode());
@@ -369,7 +368,7 @@ public class TaskServiceImpl implements TaskService {
         }
 
         log.info("insert batch: {}", insertList);
-        if(insertList.size()>0) {
+        if (insertList.size() > 0) {
             streamTaskMapper.insertTaskBatch(insertList);
         }
 
@@ -377,21 +376,21 @@ public class TaskServiceImpl implements TaskService {
     }
 
     public void closeCacheFromClient(String app, List<String> uniqueIdList) {
-        if(serverConfig.getUseJavacv().equals("1")) {
-            List<String> shouldAliveList = uniqueIdList.stream().map(item-> streamTaskCache.getTaskThreadKey(app, item)).collect(Collectors.toList());
+        if (serverConfig.getUseJavacv().equals("1")) {
+            List<String> shouldAliveList = uniqueIdList.stream().map(item -> streamTaskCache.getTaskThreadKey(app, item)).collect(Collectors.toList());
             ConcurrentHashMap<String, Thread> threadMap = streamTaskCache.getThreadMap();
-            for(Map.Entry<String, Thread> entry: threadMap.entrySet()){
+            for (Map.Entry<String, Thread> entry : threadMap.entrySet()) {
                 String uniqueId = entry.getKey();
-                if(!shouldAliveList.contains(uniqueId)) {
+                if (!shouldAliveList.contains(uniqueId)) {
                     closeCache(app, uniqueId);
                 }
             }
         } else {
-            List<String> shouldAliveList = uniqueIdList.stream().map(item-> streamTaskCache.getTaskKey(app, item)).collect(Collectors.toList());
+            List<String> shouldAliveList = uniqueIdList.stream().map(item -> streamTaskCache.getTaskKey(app, item)).collect(Collectors.toList());
             ConcurrentHashMap<String, Process> threadMap = streamTaskCache.getProcessMap();
-            for(Map.Entry<String, Process> entry: threadMap.entrySet()){
+            for (Map.Entry<String, Process> entry : threadMap.entrySet()) {
                 String uniqueId = entry.getKey();
-                if(!shouldAliveList.contains(uniqueId)) {
+                if (!shouldAliveList.contains(uniqueId)) {
                     closeCache(app, uniqueId);
                 }
             }
@@ -400,15 +399,15 @@ public class TaskServiceImpl implements TaskService {
     }
 
     public void closeCache(String app, String uniqueId) {
-        if(serverConfig.getUseJavacv().equals("1")) {
+        if (serverConfig.getUseJavacv().equals("1")) {
             Thread thread = streamTaskCache.getThread(app, uniqueId);
-            if(thread != null && thread.isAlive()) {
+            if (thread != null && thread.isAlive()) {
                 thread.interrupt();
             }
             streamTaskCache.clearThread(app, uniqueId);
         } else {
             Process process = streamTaskCache.getProcess(app, uniqueId);
-            if(process != null && process.isAlive()) {
+            if (process != null && process.isAlive()) {
                 process.destroy();
             }
             streamTaskCache.clearProcess(app, uniqueId);
@@ -417,14 +416,14 @@ public class TaskServiceImpl implements TaskService {
     }
 
     public void startCacheFromClient(String app, List<TaskReqVo> taskVos) {
-        if(serverConfig.getUseJavacv().equals("1")) {
+        if (serverConfig.getUseJavacv().equals("1")) {
             ConcurrentHashMap<String, Thread> threadMap = streamTaskCache.getThreadMap();
             Set<String> cacheList = threadMap.keySet();
 
             for (TaskReqVo taskVo : taskVos) {
                 String key = streamTaskCache.getTaskThreadKey(app, taskVo.getUniqueId());
 
-                if(!cacheList.contains(key)) {
+                if (!cacheList.contains(key)) {
                     createCacheTask(taskVo.getOriginStream(), app, taskVo.getUniqueId());
                 }
             }
@@ -435,7 +434,7 @@ public class TaskServiceImpl implements TaskService {
             for (TaskReqVo taskVo : taskVos) {
                 String key = streamTaskCache.getTaskKey(app, taskVo.getUniqueId());
 
-                if(!cacheList.contains(key)) {
+                if (!cacheList.contains(key)) {
                     createCacheTask(taskVo.getOriginStream(), app, taskVo.getUniqueId());
                 }
             }
@@ -448,7 +447,7 @@ public class TaskServiceImpl implements TaskService {
         StreamTaskDto streamTaskDto = StreamTaskDto.builder().app(taskListReqVo.getApp())
                 .status(StreamTaskStatusEnum.PROCESSING.getCode()).build();
         List<StreamTask> taskList = getStreamTask(streamTaskDto);
-        if(taskList == null || taskList.isEmpty()) {
+        if (taskList == null || taskList.isEmpty()) {
             return BaseResponseVo.ok(new ArrayList<>());
         }
 
@@ -458,12 +457,13 @@ public class TaskServiceImpl implements TaskService {
 
     /**
      * 获取gb28181视频流
+     *
      * @param taskReqVo
      * @return
      */
     @Override
     public BaseResponseVo<CreateTaskRspVo> getGBStream(TaskReqVo taskReqVo) {
-        if(taskReqVo.getChannelId()==null||taskReqVo.getChannelId().isEmpty()) {
+        if (taskReqVo.getChannelId() == null || taskReqVo.getChannelId().isEmpty()) {
             log.error("req error, channel id is empty. req: {}", taskReqVo);
             return BaseResponseVo.error(ReturnCodeEnum.PARAM_INVALID);
         }
@@ -471,32 +471,53 @@ public class TaskServiceImpl implements TaskService {
         taskReqVo.setApp("live");
 
         Integer result = srsClientHelper.inviteChannel(taskReqVo.getApp(), taskReqVo.getUniqueId(), taskReqVo.getChannelId());
-        if(result == -1){
+        if (result == -1) {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_FAILED);
         }
-        if(result == 1) {
+        if (result == 1) {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_CLIENTS_LIMIT);
         }
 
         GetGBDataFromSrsRspVo.ChannelData gbChannelOne = srsClientHelper.getGBChannelOne(taskReqVo.getApp(),
                 taskReqVo.getUniqueId(), taskReqVo.getChannelId());
-        if(gbChannelOne == null) {
+        if (gbChannelOne == null) {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_GB_CHANNEL);
         }
 
         CreateTaskRspVo vo = new CreateTaskRspVo();
         Integer outputType = taskReqVo.getOutputType();
-            if(outputType == StreamOutputTypeEnum.WEB_RTC.getCode()) {
-                vo.setWebrtcOutput(gbChannelOne.getWebrtc_url());
-            } else if(outputType == StreamOutputTypeEnum.HTTP_HLV.getCode()) {
-                vo.setWebrtcOutput(gbChannelOne.getFlv_url());
-            } else if(outputType == StreamOutputTypeEnum.HLS.getCode()) {
-                vo.setWebrtcOutput(gbChannelOne.getHls_url());
-            } else if(outputType == StreamOutputTypeEnum.RTMP.getCode()) {
-                vo.setWebrtcOutput(gbChannelOne.getRtmp_url());
-            } else {
-                return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_TYPE_NOT_SUPPORT);
+        if (outputType == StreamOutputTypeEnum.WEB_RTC.getCode()) {
+            vo.setWebrtcOutput(gbChannelOne.getWebrtc_url());
+        } else if (outputType == StreamOutputTypeEnum.HTTP_HLV.getCode()) {
+            vo.setWebrtcOutput(gbChannelOne.getFlv_url());
+        } else if (outputType == StreamOutputTypeEnum.HLS.getCode()) {
+            vo.setWebrtcOutput(gbChannelOne.getHls_url());
+        } else if (outputType == StreamOutputTypeEnum.RTMP.getCode()) {
+            vo.setWebrtcOutput(gbChannelOne.getRtmp_url());
+        } else {
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_TYPE_NOT_SUPPORT);
         }
+
         return BaseResponseVo.ok(vo);
+    }
+
+    @Override
+    public BaseResponseVo<GetStreamFromSrsRspVo.StreamData> getStreamInfo(StreamInfoReqVo streamInfoReqVo) {
+        // srs gb28181版本只支持app=live
+        streamInfoReqVo.setApp("live");
+        String streamName;
+        if(streamInfoReqVo.getChannelId() != null && !streamInfoReqVo.getChannelId().isEmpty()) {
+            streamName = streamInfoReqVo.getUniqueId() + "@" + streamInfoReqVo.getChannelId();
+        } else {
+            streamName = streamInfoReqVo.getUniqueId();
+        }
+
+        // 获取分辨率
+        GetStreamFromSrsRspVo.StreamData streamOne = srsClientHelper.getStreamOne(streamInfoReqVo.getApp(), streamName);
+        if (streamOne == null) {
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_ONE_NULL);
+        }
+
+        return BaseResponseVo.ok(streamOne);
     }
 }
