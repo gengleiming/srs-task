@@ -6,14 +6,10 @@
     when:
       - script_failure
   only:
-    - /^dev.*$/
-    - /^fea.*$/
+    - /^feature.*$/
     - /^release.*$/
-    - /^hotfix.*$/
-    - /^original.*$/
-    - ci
+    - /^master.*$/
   tags:
-    #- business
     - vesionbook
 
 cache:
@@ -23,8 +19,9 @@ cache:
 variables:
   REG: "192.168.13.25:5002"
   PROJECT: "business"
-  IMAGE: "vesionbook-srs-task"
-  TAG: "$CI_BUILD_REF_NAME"
+  IMAGE: "vesionbook-integrate-platform"
+  #TAG: "$CI_BUILD_REF_NAME"
+  TAG: "$CI_COMMIT_REF_NAME"
   APPHOUSE_USER: "admin"
   APPHOUSE_PASSWD: "123456"
   vesionbookRancherServerPort: "192.168.12.172:8443"
@@ -33,14 +30,11 @@ variables:
   rancherUser: "admin"
   rancherNamespace: "server"
   resourceUrl: "http://192.168.13.25:8000/resources"
-  appName: "vesionbook-srs-task"
+  appName: "vesionbook-integrate-platform"
 
 stages:
-  #  - analyze
   - maven
-  - sonar
   - build
-  #  - test
   - deploy
 
 before_script:
@@ -75,24 +69,7 @@ job_maven:
     untracked: true
     expire_in: 1 week
 
-job_sonar:
-  extends: .main
-  stage: sonar
-  image: 192.168.13.25:5002/base/node-sonar:1.0.0
-  variables:
-    SONAR_TOKEN: "8973a97f41d3f21f3126539dac0b554474be5cb7"
-    SONAR_HOST_URL: "http://192.168.13.25:9000/"
-    GIT_DEPTH: 0
-  script:
-    - ls -lh
-    - npm install -D typescript
-    - sonar-scanner -Dsonar.projectKey=${IMAGE} -Dsonar.sources=. -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_TOKEN} -Dsonar.sourceEncoding=utf-8
-  allow_failure: true
-  only:
-    - merge_requests
-    - /^dev.*$/
-
-job_rel_build:
+job_build:
   extends: .main
   stage: build
   image: 192.168.13.25:5002/base/docker:latest
@@ -103,111 +80,6 @@ job_rel_build:
     - docker info
     - ls -lh
     - chmod -R +x *
-    - docker build -t ${REG}/${PROJECT}/${IMAGE}:latest -t ${REG}/${PROJECT}/${IMAGE}:${TAG} .
-    - docker login -u${APPHOUSE_USER} -p${APPHOUSE_PASSWD} ${REG}
-#    - docker push ${REG}/${PROJECT}/${IMAGE}:latest
-    - docker push ${REG}/${PROJECT}/${IMAGE}:${TAG}
-  only:
-    - /^dev.*$/
-    - /^hotfix.*$/
-    - /^release.*$/
-
-job_fea_build:
-  extends: .main
-  stage: build
-  image: 192.168.13.25:5002/base/docker:latest
-  services:
-    - name: 192.168.13.25:5002/base/docker:stable-dind
-      command: [ "--insecure-registry=https://192.168.13.25:5002 --dns=192.168.70.100" ]
-  script:
-    - docker info
-    - ls -lh
-    - chmod -R +x *
-    - docker build -t  ${REG}/${PROJECT}/${IMAGE}:${TAG} .
+    - docker build -t ${REG}/${PROJECT}/${IMAGE}:${TAG} .
     - docker login -u${APPHOUSE_USER} -p${APPHOUSE_PASSWD} ${REG}
     - docker push ${REG}/${PROJECT}/${IMAGE}:${TAG}
-  only:
-    - /^fea.*$/
-
-job_orig_build:
-  extends: .main
-  stage: build
-  image: 192.168.13.25:5002/base/docker:latest
-  services:
-    - name: 192.168.13.25:5002/base/docker:stable-dind
-      command: [ "--insecure-registry=https://192.168.13.25:5002 --dns=192.168.70.100" ]
-  script:
-    - docker info
-    - ls -lh
-    - chmod -R +x *
-    - docker build -t  ${REG}/${PROJECT}/${IMAGE}:orig-${TAG} .
-    - docker login -u${APPHOUSE_USER} -p${APPHOUSE_PASSWD} ${REG}
-    - docker push ${REG}/${PROJECT}/${IMAGE}:orig-${TAG}
-  only:
-    - /^original.*$/
-
-
-job_vesionbook_deploy:
-  extends: .main
-  stage: deploy
-  image: 192.168.13.25:5002/base/maven:3-jdk-8
-  script:
-    - if [ ! -f /usr/local/bin/rancher ] ; then wget -N ${resourceUrl}/rancher && chmod +x rancher && cp rancher /usr/local/bin ; fi
-    - if [ ! -f /usr/local/bin/kubectl ] ; then wget -N ${resourceUrl}/kubectl && chmod +x kubectl && cp kubectl /usr/local/bin ; fi
-    - if [ ! -f /usr/local/bin/jq ] ; then wget -N ${resourceUrl}/jq-linux64 && chmod +x jq-linux64 && cp jq-linux64 /usr/local/bin/jq ; fi
-    - ls /usr/local/bin
-    - pwd
-    - which curl
-    - which apt-get
-    #    - apt-get -y install jq
-    - loginToken=$(curl -k -s -H 'content-type:application/json' "https://${vesionbookRancherServerPort}/v3-public/localProviders/local?action=login" --data-binary "{\"username\":\"${rancherUser}\",\"password\":\"${rancherPass}\",\"ttl\":6000}" | jq -r .token)
-    - if test a"$loginToken" == a"null"  -o  a"$loginToken" == a""  ; then exit 1; fi;
-    - echo $loginToken
-    - apiToken=$(curl -k -s "https://${vesionbookRancherServerPort}/v3/token" -H 'Content-Type:application/json' -H "Authorization:Bearer ${loginToken}" --data-binary '{"type":"token","description":"for scripts and stuff"}' | jq -r .token)
-    - echo $apiToken
-    - if test a"$apiToken" == a"null"  -o  a"$apiToken" == a""  ; then exit 1; fi;
-    - (echo y ; sleep 1 ; echo 1) | rancher login https://$vesionbookRancherServerPort --token $apiToken
-#    - rancher kubectl -n $rancherNamespace apply -f mongo.yaml
-#    - rancher kubectl -n $rancherNamespace rolling-update frontend-v1 frontend-v2 --image=192.168.13.25:5002/business/ai-gateway:1.2.1
-
-    - podId=$(rancher kubectl -n $rancherNamespace get  pod | grep ${appName} | awk '{print $1}')
-    - rancher kubectl -n $rancherNamespace delete pod $podId
-    - rancher kubectl -n $rancherNamespace get pod
-    - rancher kubectl -n $rancherNamespace set image deployment/${IMAGE} ${IMAGE}=${REG}/${PROJECT}/${IMAGE}:${TAG}
-
-    #    - rancher kubectl -n $rancherNamespace get  pod $podId -o yaml | sed 's/192.168.13.25:5002\/business\/vesionbook-manager:1.2.0.3/192.168.13.25:5002\/business\/vesionbook-manager:1.2.0/' | rancher kubectl apply -f -
-  only:
-    - /^fea\.vesionbook.*$/
-
-job_building_deploy:
-  extends: .main
-  stage: deploy
-  image: 192.168.13.25:5002/base/maven:3-jdk-8
-  script:
-    - if [ ! -f /usr/local/bin/rancher ] ; then wget -N ${resourceUrl}/rancher && chmod +x rancher && cp rancher /usr/local/bin ; fi
-    - if [ ! -f /usr/local/bin/kubectl ] ; then wget -N ${resourceUrl}/kubectl && chmod +x kubectl && cp kubectl /usr/local/bin ; fi
-    - if [ ! -f /usr/local/bin/jq ] ; then wget -N ${resourceUrl}/jq-linux64 && chmod +x jq-linux64 && cp jq-linux64 /usr/local/bin/jq ; fi
-    - ls /usr/local/bin
-    - pwd
-    - which curl
-    - which apt-get
-    #    - apt-get -y install jq
-    - loginToken=$(curl -k -s -H 'content-type:application/json' "https://${buildingRancherServerPort}/v3-public/localProviders/local?action=login" --data-binary "{\"username\":\"${rancherUser}\",\"password\":\"${rancherPass}\",\"ttl\":6000}" | jq -r .token)
-    - if test a"$loginToken" == a"null"  -o  a"$loginToken" == a""  ; then exit 1; fi;
-    - echo $loginToken
-    - apiToken=$(curl -k -s "https://${buildingRancherServerPort}/v3/token" -H 'Content-Type:application/json' -H "Authorization:Bearer ${loginToken}" --data-binary '{"type":"token","description":"for scripts and stuff"}' | jq -r .token)
-    - echo $apiToken
-    - if test a"$apiToken" == a"null"  -o  a"$apiToken" == a""  ; then exit 1; fi;
-    - (echo y ; sleep 1 ; echo 1) | rancher login https://$buildingRancherServerPort --token $apiToken
-#    - rancher kubectl -n $rancherNamespace apply -f mongo.yaml
-#    - rancher kubectl -n $rancherNamespace rolling-update frontend-v1 frontend-v2 --image=192.168.13.25:5002/business/ai-gateway:1.2.1
-
-    - podId=$(rancher kubectl -n $rancherNamespace get  pod | grep ${appName} | awk '{print $1}')
-    - rancher kubectl -n $rancherNamespace delete pod $podId
-    - rancher kubectl -n $rancherNamespace get pod
-    - rancher kubectl -n $rancherNamespace set image deployment/${IMAGE} ${IMAGE}=${REG}/${PROJECT}/${IMAGE}:${TAG}
-
-    #    - rancher kubectl -n $rancherNamespace get  pod $podId -o yaml | sed 's/192.168.13.25:5002\/business\/vesionbook-manager:1.2.0.3/192.168.13.25:5002\/business\/vesionbook-manager:1.2.0/' | rancher kubectl apply -f -
-  only:
-    - /^fea\.building.*$/
-
