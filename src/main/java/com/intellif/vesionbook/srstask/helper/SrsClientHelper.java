@@ -88,7 +88,7 @@ public class SrsClientHelper {
         GetGBDataFromSrsRspVo response = srsClient.getGBData("sip_bye", id, chid);
 
         if(response.getCode() != 0) {
-            log.error("srs stop channel return error. response: {}", response);
+            log.error("srs stop channel return error. id: {}, chid: {}, response: {}", id, chid, response);
             return false;
         }
 
@@ -124,38 +124,23 @@ public class SrsClientHelper {
      * @return 0:成功 -1:失败 1:客户端数量超限
      */
     public Integer inviteChannel(String app, String deviceId, String channelId) {
-        GetGBDataFromSrsRspVo response;
-        if(deviceId==null|| deviceId.isEmpty() || channelId ==null || channelId.isEmpty()) {
-            log.error("param error. device id: {}, channel id: {}", deviceId, channelId);
-            return -1;
-        }
-        response = srsClient.getGBData("sip_query_session", deviceId, null);
-
-        if(response.getCode() != 0) {
-            log.error("query device session error, device id: {}. response: {}", deviceId, response);
+        Integer status = checkInviteWithReset(deviceId, channelId);
+        // 出错，不可邀请
+        if(status < 0) {
             return -1;
         }
 
-        List<GetGBDataFromSrsRspVo.SessionData> sessions = response.getData().getSessions();
-        if(sessions == null || sessions.isEmpty()) {
-            log.error("device not registered. please register first. sessions: {}", sessions);
-            return -1;
-        }
-
-        List<GetGBDataFromSrsRspVo.DeviceData> devices = sessions.get(0).getDevices();
-        if(devices==null || devices.isEmpty()) {
-            log.error("device not registered. please register first. devices: {}", devices);
-            return -1;
-        }
-        boolean inviteOk = devices.get(0).getInvite_status().equals("InviteOk");
-        if(inviteOk) {
+        // 已经邀请
+        if(status > 0) {
             return 0;
         }
 
+        // 准备邀请
         Integer clientsNum = getClientsNum();
         if(clientsNum == null) {
             return -1;
         }
+
         if(clientsNum >= serverConfig.getClientsLimit()) {
             log.error("invite client limit. device id: {}, channel id: {}, client num: {}", deviceId, channelId, clientsNum);
             return 1;
@@ -173,6 +158,61 @@ public class SrsClientHelper {
         }
 
         log.info("invite success. device id: {}, channel id: {}, response: {}", deviceId, channelId, getGBDataFromSrsRspVo);
+
+        return 0;
+    }
+
+    /**
+     *
+     * @param deviceId
+     * @param channelId
+     * @return 0:可以invite，1：已经invite，-1：状态异常，不能invite
+     */
+    public Integer checkInviteWithReset(String deviceId, String channelId) {
+        if(deviceId==null|| deviceId.isEmpty() || channelId ==null || channelId.isEmpty()) {
+            log.error("param error. device id: {}, channel id: {}", deviceId, channelId);
+            return -1;
+        }
+        GetGBDataFromSrsRspVo response = srsClient.getGBData("sip_query_session", deviceId, null);
+
+        if(response.getCode() != 0) {
+            log.error("query device session error, device id: {}. response: {}", deviceId, response);
+            return -1;
+        }
+
+        List<GetGBDataFromSrsRspVo.SessionData> sessions = response.getData().getSessions();
+        if(sessions == null || sessions.isEmpty()) {
+            log.error("device not registered. please register first. sessions: {}", sessions);
+            return -1;
+        }
+
+        List<GetGBDataFromSrsRspVo.DeviceData> devices = sessions.get(0).getDevices();
+        if(devices==null || devices.isEmpty()) {
+            log.error("device not registered. please register first. devices: {}", devices);
+            return -1;
+        }
+
+        boolean inviteOk = devices.get(0).getInvite_status().equals("InviteOk");
+        if(!inviteOk) {
+            return 0;
+        }
+
+        List<GetGBDataFromSrsRspVo.ChannelData> channels = getGBChannels();
+        List<GetGBDataFromSrsRspVo.ChannelData> currentChannels = channels.stream()
+                .filter(item -> item.getId().equals(deviceId + "@" + channelId)).collect(Collectors.toList());
+
+        if(!currentChannels.isEmpty()) {
+            log.info("channel has invited. deviceId: {}, channelId: {}", deviceId, channelId);
+            return 1;
+        }
+
+        Boolean closeOk = closeChannel(deviceId, channelId);
+        if(!closeOk) {
+            log.error("reset inviteOk failed. deviceId: {}, channelId: {}, devices: {}", deviceId, channelId, devices);
+            return -1;
+        }
+
+        log.info("reset inviteOk success. deviceId: {}, channelId: {}", deviceId, channelId);
 
         return 0;
     }
