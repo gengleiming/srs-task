@@ -29,6 +29,17 @@ public class ScheduledTask {
      */
     @Scheduled(initialDelay = 180000, fixedDelay = 60000)
     public void checkStreamAndCloseUnused() {
+        // 首先检测关闭异常通道
+        srsClientHelper.closeErrorGBChannels();
+        // 构建并更新deadMap
+        updateDeadMap();
+        // 先清除gb28181
+        closeUnusedGB();
+        // 再清除剩余的，剩余的目前只有rtsp
+        closeUnusedRtsp();
+    }
+
+    public void updateDeadMap() {
         log.info("dead map: {}", deadMap);
         List<GetStreamFromSrsRspVo.StreamData> streamsWithNoClients = srsClientHelper.getStreamsWithNoClients();
         if(streamsWithNoClients == null) {
@@ -56,13 +67,9 @@ public class ScheduledTask {
             deadMap.put(stream.getId(), cachedeaddto);
         }
 
-        // 先清除gb28181
-        closeUnusedGB(deadMap);
-        // 再清除剩余的，剩余的目前只有rtsp
-        closeUnusedRtsp(deadMap);
     }
 
-    public void closeUnusedRtsp(Map<String, CacheDeadDto> deadMap) {
+    public void closeUnusedRtsp() {
         log.info("scheduled 检测关闭 dead Rtsp...");
 
         List<String> removeList = new ArrayList<>();
@@ -85,7 +92,7 @@ public class ScheduledTask {
         }
     }
 
-    public void closeUnusedGB(Map<String, CacheDeadDto> deadMap) {
+    public void closeUnusedGB() {
         log.info("scheduled 检测关闭 dead gb28181...");
 
         List<GetGBDataFromSrsRspVo.ChannelData> gbChannels = srsClientHelper.getGBChannels();
@@ -112,4 +119,6 @@ public class ScheduledTask {
             deadMap.remove(key);
         }
     }
+
+
 }

@@ -1,6 +1,7 @@
 package com.intellif.vesionbook.srstask.helper;
 
 import com.intellif.vesionbook.srstask.config.ServerConfig;
+import com.intellif.vesionbook.srstask.constant.CommonConstant;
 import com.intellif.vesionbook.srstask.enums.SrsReturnCodeEnum;
 import com.intellif.vesionbook.srstask.feign.SrsClient;
 import com.intellif.vesionbook.srstask.model.vo.rsp.BaseSrsRspVo;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -311,6 +313,45 @@ public class SrsClientHelper {
 
         return channelStreams.get(0);
 
+    }
+
+    public void closeErrorGBChannels() {
+        log.info("开始检查关闭异常的通道");
+        List<GetGBDataFromSrsRspVo.SessionData> sessions = getAllGBSessions();
+        if(sessions == null || sessions.isEmpty()) {
+            return;
+        }
+
+        Set<String> inviteOkChannels = new HashSet<>();
+
+        for (GetGBDataFromSrsRspVo.SessionData session: sessions) {
+            List<GetGBDataFromSrsRspVo.DeviceData> devices = session.getDevices();
+            if(devices == null || devices.isEmpty()) {
+                continue;
+            }
+
+            for (GetGBDataFromSrsRspVo.DeviceData device : devices) {
+                if(device.getInvite_status().equals(CommonConstant.Channel.INVITE_STATUS_OK)) {
+                    inviteOkChannels.add(session.getId() + "@" + device.getDevice_id());
+                }
+            }
+        }
+
+        List<GetGBDataFromSrsRspVo.ChannelData> channels = getGBChannels();
+        if(channels == null) {
+            return;
+        }
+        Set<String> playChannels = channels.stream().map(GetGBDataFromSrsRspVo.ChannelData::getId).collect(Collectors.toSet());
+
+        inviteOkChannels.removeAll(playChannels);
+
+        log.info("error channels: {}", inviteOkChannels);
+
+        for (String errorChannel : inviteOkChannels) {
+            String[] channelSplit = errorChannel.split("@");
+            Boolean success = closeChannel(channelSplit[0], channelSplit[1]);
+            log.info("close channel: {}, success: {}", errorChannel, success);
+        }
     }
 
 }
