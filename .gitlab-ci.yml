@@ -6,9 +6,9 @@
     when:
       - script_failure
   only:
-    - /^feature.*$/
-    - /^release.*$/
-    - /^master.*$/
+    - /^feature-*$/
+    - /^release-*$/
+    - /^master-*$/
   tags:
     - vesionbook
 
