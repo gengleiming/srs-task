@@ -83,3 +83,7 @@ job_build:
     - docker build -t ${REG}/${PROJECT}/${IMAGE}:${TAG} .
     - docker login -u${APPHOUSE_USER} -p${APPHOUSE_PASSWD} ${REG}
     - docker push ${REG}/${PROJECT}/${IMAGE}:${TAG}
+  only:
+    - /^feature-*$/
+    - /^release-*$/
+    - /^master-*$/
