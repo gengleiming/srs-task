@@ -20,7 +20,7 @@ cache:
 variables:
   REG: "192.168.13.25:5002"
   PROJECT: "business"
-  IMAGE: "vesionbook-integrate-platform"
+  IMAGE: "vesionbook-srs-task"
   #TAG: "$CI_BUILD_REF_NAME"
   TAG: "$CI_COMMIT_REF_NAME"
   APPHOUSE_USER: "admin"
@@ -31,7 +31,7 @@ variables:
   rancherUser: "admin"
   rancherNamespace: "server"
   resourceUrl: "http://192.168.13.25:8000/resources"
-  appName: "vesionbook-integrate-platform"
+  appName: "vesionbook-srs-task"
 
 stages:
   - maven

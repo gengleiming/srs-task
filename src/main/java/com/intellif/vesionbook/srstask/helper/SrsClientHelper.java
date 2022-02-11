@@ -253,7 +253,13 @@ public class SrsClientHelper {
             return null;
         }
 
-        List<GetGBDataFromSrsRspVo.SessionData> sessions = response.getData().getSessions();
+        GetGBDataFromSrsRspVo.ReturnData returnData = response.getData();
+        if(returnData == null) {
+            log.info("get return data null. response: {}", response);
+            return new ArrayList<>();
+        }
+
+        List<GetGBDataFromSrsRspVo.SessionData> sessions = returnData.getSessions();
         if(sessions == null) {
             log.info("get session null. response: {}", response);
             return new ArrayList<>();
