@@ -30,6 +30,9 @@ public enum ReturnCodeEnum {
     ERROR_STREAM_CLIENTS_LIMIT(90000011, "stream clients limit", "客户端数量超限"),
     ERROR_STREAM_ONE_NULL(90000012, "get stream error", "流不存在"),
     ERROR_STREAM_VIDEO(90000013, "stream video error", "获取流视频信息异常"),
+
+    ERROR_GET_STREAM_TASK_ERROR(90000014, "stream video error", "获取流视频信息异常"),
+
     ;
 
     private final int resultCode;

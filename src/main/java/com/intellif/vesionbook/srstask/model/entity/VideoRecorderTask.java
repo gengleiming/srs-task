@@ -1,0 +1,56 @@
+package com.intellif.vesionbook.srstask.model.entity;
+
+import lombok.*;
+
+import java.io.Serializable;
+import java.util.Date;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+public class VideoRecorderTask implements Serializable
+{
+
+    /**
+     *
+     */
+    private Long id;
+
+    /**
+     * 应用
+     */
+    private String app;
+
+    /** 
+     * 应用
+     */
+    private String uniqueId;
+
+    /** 
+     * 录制开始时间戳（秒）
+     */
+    private Long startTime;
+
+    /** 
+     * 录制结束时间戳（秒）
+     */
+    private Long endTime;
+
+    /** 
+     * 录像任务状态 0.未开始 1.运行中 2.已结束 3. 任务异常
+     */
+    private int status;
+
+    /**
+     *
+     */
+    private Date createTime;
+
+    /**
+     *
+     */
+    private Date updateTime;
+
+}

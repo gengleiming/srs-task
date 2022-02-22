@@ -1,16 +1,12 @@
 package com.intellif.vesionbook.srstask.model.vo.req;
 
 import io.swagger.annotations.ApiModelProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class TaskReqVo {
+public class VideoRecorderTaskReqVo {
     @ApiModelProperty(value = "应用ID", required = true, example = "garden")
     private String app;
 
@@ -23,7 +19,6 @@ public class TaskReqVo {
     @ApiModelProperty(value = "GB28181通道id", example = "'34020000001320000001'")
     private String channelId;
 
-    @ApiModelProperty(value = "分发类型 1:rtmp 2:http-hlv 3:hls 4:WebRTC", required = true, example = "4")
-    private Integer outputType;
-
+    @ApiModelProperty(value = "录制开始时间戳和结束时间戳", required = true)
+    private List<TimeRange> timeRangeList;
 }
