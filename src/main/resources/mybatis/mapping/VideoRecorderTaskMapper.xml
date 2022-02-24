@@ -14,6 +14,12 @@
             <if test="uniqueId != null and uniqueId != ''">
                 unique_id,
             </if>
+            <if test="channelId != null and channelId != ''">
+                channel_id,
+            </if>
+            <if test="originStream != null and originStream != ''">
+                origin_stream,
+            </if>
             <if test="startTime != null">
                 start_time,
             </if>
@@ -26,6 +32,9 @@
             <if test="path != null and path != ''">
                 path,
             </if>
+            <if test="streamType != null">
+                stream_type,
+            </if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null and id != ''">
@@ -36,6 +45,12 @@
             </if>
             <if test="uniqueId != null and uniqueId != ''">
                 uniqueId,
+            </if>
+            <if test="channelId != null and channelId != ''">
+                channelId,
+            </if>
+            <if test="originStream != null and originStream != ''">
+                originStream,
             </if>
             <if test="startTime != null">
                 startTime,
@@ -48,6 +63,9 @@
             </if>
             <if test="path != null and path != ''">
                 path,
+            </if>
+            <if test="streamType != null">
+                streamType,
             </if>
         </trim>
     </insert>
@@ -92,5 +110,27 @@
             `video_recorder_task`
         where `id` = #{id}
     </select>
+
+    <update id="updateStatus" parameterType="com.intellif.vesionbook.srstask.model.dto.UpdateStatusVideoRecorderTaskDto">
+        update video_recorder_task
+        set status = #{status}
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id,jdbcType=BIGINT}
+            </if>
+            <if test="app != null and app != ''">
+                and app = #{app,jdbcType=VARCHAR}
+            </if>
+            <if test="uniqueId != null and uniqueId != ''">
+                and unique_id = #{uniqueId,jdbcType=VARCHAR}
+            </if>
+            <if test="idList != null and idList != ''">
+                and id in
+                <foreach collection="idList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item,jdbcType=BIGINT}
+                </foreach>
+            </if>
+        </where>
+    </update>
 
 </mapper>

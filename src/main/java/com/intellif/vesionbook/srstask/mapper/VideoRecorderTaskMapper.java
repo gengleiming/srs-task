@@ -1,5 +1,6 @@
 package com.intellif.vesionbook.srstask.mapper;
 
+import com.intellif.vesionbook.srstask.model.dto.UpdateStatusVideoRecorderTaskDto;
 import com.intellif.vesionbook.srstask.model.dto.VideoRecorderTaskDto;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -15,5 +16,7 @@ public interface VideoRecorderTaskMapper {
     List<VideoRecorderTask> selectByParam(VideoRecorderTaskDto videoRecorderTaskDto);
 
     VideoRecorderTask selectById(String id);
-    
+
+    void updateStatus(UpdateStatusVideoRecorderTaskDto updateStatusVideoRecorderTaskDto);
+
 }

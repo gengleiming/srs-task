@@ -32,4 +32,7 @@ public class ServerConfig {
     // 3分钟之内推流和拉流的客户端总数，不能超过100个
     @Value("${clients.limit.min3:100}")
     private Integer clientsLimit;
+
+    @Value("${recorder.srs.host:192.168.12.108}")
+    private String srsRecorderHost;
 }

@@ -1,13 +1,9 @@
 package com.intellif.vesionbook.srstask.helper;
 
-import com.intellif.vesionbook.srstask.cache.StreamTaskCache;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.stereotype.Component;
 import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureTask;
 
-import javax.annotation.Resource;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;

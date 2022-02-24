@@ -13,5 +13,8 @@ public interface VideoRecorderTaskService
     VideoRecorderTask selectById(String id);
 
     PageInfo<VideoRecorderTask> getList(VideoRecorderTaskDto videoRecorderTaskDto);
-        
+
+    void videoRecordStart();
+    void videoRecordStop();
+
 }

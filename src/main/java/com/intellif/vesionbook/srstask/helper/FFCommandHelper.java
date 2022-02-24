@@ -1,6 +1,7 @@
 package com.intellif.vesionbook.srstask.helper;
 
 import com.intellif.vesionbook.srstask.config.ServerConfig;
+import com.intellif.vesionbook.srstask.enums.StreamTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -21,23 +22,18 @@ public class FFCommandHelper {
 
     @Resource
     private ServerConfig serverConfig;
-    /**
-     * 拉流推流，分发HTTP-Hlv和WebRTC地址
-     * @param originUrl 拉流源地址
-     * @return
-     * @author zxzhang
-     * @date 2019/12/10
-     */
-    public Process transcodeStream(String originUrl, String app, String uniqueId) {
-        String pushUrl = "rtmp://" + serverConfig.getSrsHost() + "/" + app + "/" + uniqueId;
+
+    public LinkedList<String> ffmpegCommandList(String originUrl, String pushUrl, int streamType){
         //拉流推流，视频转码
         LinkedList<String> ffmpegCmdList = new LinkedList<>();
         ffmpegCmdList.add("ffmpeg");
         ffmpegCmdList.add("-v");
         ffmpegCmdList.add(serverConfig.getFfmpegLogLevel());
         ffmpegCmdList.add("-re");
-        ffmpegCmdList.add("-rtsp_transport");
-        ffmpegCmdList.add("tcp");
+        if(streamType == StreamTypeEnum.RTSP.getCode()) {
+            ffmpegCmdList.add("-rtsp_transport");
+            ffmpegCmdList.add("tcp");
+        }
         ffmpegCmdList.add("-i");
         ffmpegCmdList.add(originUrl);
         ffmpegCmdList.add("-vcodec");
@@ -48,6 +44,28 @@ public class FFCommandHelper {
         ffmpegCmdList.add("flv");
         ffmpegCmdList.add("-y");
         ffmpegCmdList.add(pushUrl);
+        return ffmpegCmdList;
+    }
+
+    /**
+     * 拉流推流，分发HTTP-Hlv和WebRTC地址
+     * @param originUrl 拉流源地址
+     * @return
+     * @author zxzhang
+     * @date 2019/12/10
+     */
+    public Process transcodeStream(String originUrl, String app, String uniqueId, String srsHost) {
+        String pushUrl = "rtmp://" + srsHost + "/" + app + "/" + uniqueId;
+        LinkedList<String> ffmpegCmdList;
+        if(originUrl.startsWith(StreamTypeEnum.RTSP.getName())) {
+            ffmpegCmdList = ffmpegCommandList(originUrl, pushUrl, StreamTypeEnum.RTSP.getCode());
+        } else if(originUrl.startsWith(StreamTypeEnum.RTMP.getName())) {
+            ffmpegCmdList = ffmpegCommandList(originUrl, pushUrl, StreamTypeEnum.RTMP.getCode());
+        } else {
+            log.error("origin stream error. origin stream: {}", originUrl);
+            return null;
+        }
+
         ProcessBuilder builder = new ProcessBuilder();
         builder.command(ffmpegCmdList);
 

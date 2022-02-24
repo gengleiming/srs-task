@@ -12,8 +12,8 @@ import java.util.List;
 @ToString
 public class VideoRecorderTaskDto implements Serializable
 {
-    private Integer page;
-    private Integer pageSize;
+    private Integer page = 1;
+    private Integer pageSize = 10;
 
     private Long id;
 
@@ -29,7 +29,7 @@ public class VideoRecorderTaskDto implements Serializable
      */
     private String uniqueId;
 
-    /** 
+    /**
      * 录制开始时间戳（秒）
      */
     private Long startTime;
