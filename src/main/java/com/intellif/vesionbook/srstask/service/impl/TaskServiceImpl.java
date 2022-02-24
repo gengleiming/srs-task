@@ -490,11 +490,11 @@ public class TaskServiceImpl implements TaskService {
         if (outputType == StreamOutputTypeEnum.WEB_RTC.getCode()) {
             vo.setWebrtcOutput(gbChannelOne.getWebrtc_url());
         } else if (outputType == StreamOutputTypeEnum.HTTP_HLV.getCode()) {
-            vo.setWebrtcOutput(gbChannelOne.getFlv_url());
+            vo.setHttpFlvOutput(gbChannelOne.getFlv_url());
         } else if (outputType == StreamOutputTypeEnum.HLS.getCode()) {
-            vo.setWebrtcOutput(gbChannelOne.getHls_url());
+            vo.setHlsOutput(gbChannelOne.getHls_url());
         } else if (outputType == StreamOutputTypeEnum.RTMP.getCode()) {
-            vo.setWebrtcOutput(gbChannelOne.getRtmp_url());
+            vo.setRtmpOutput(gbChannelOne.getRtmp_url());
         } else {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_TYPE_NOT_SUPPORT);
         }

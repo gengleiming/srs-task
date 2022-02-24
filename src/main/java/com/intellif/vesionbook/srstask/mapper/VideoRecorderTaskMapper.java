@@ -11,7 +11,9 @@ import com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask;
 @Mapper
 public interface VideoRecorderTaskMapper {
 
-    void insertSelective(List<VideoRecorderTask> videoRecorderTaskList);
+    void insertSelective(VideoRecorderTask videoRecorderTask);
+
+    void insertBatch(List<VideoRecorderTask> list);
 
     List<VideoRecorderTask> selectByParam(VideoRecorderTaskDto videoRecorderTaskDto);
 

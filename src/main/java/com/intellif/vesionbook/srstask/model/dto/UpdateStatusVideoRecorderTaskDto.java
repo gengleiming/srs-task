@@ -13,6 +13,8 @@ import java.util.List;
 public class UpdateStatusVideoRecorderTaskDto implements Serializable
 {
     private Long id;
+    private String app;
+    private Long uniqueId;
 
     private List<Long> idList;
 

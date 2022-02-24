@@ -3,10 +3,10 @@ package com.intellif.vesionbook.srstask.enums;
 
 public enum VideoRecorderTaskStatusEnum {
 
-    INIT(0, "未开始"),
-    RUNNING(1, "运行中"),
-    FINISHED(2, "已结束"),
-    ERROR(3, "任务异常"),
+    INIT(1, "未开始"),
+    RUNNING(2, "运行中"),
+    FINISHED(3, "已结束"),
+    ERROR(4, "任务异常"),
     ;
 
     private final int code;

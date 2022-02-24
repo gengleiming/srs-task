@@ -77,7 +77,7 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
 
             videoRecorderTasks.add(model);
         }
-        videoRecorderTaskMapper.insertSelective(videoRecorderTasks);
+        videoRecorderTaskMapper.insertBatch(videoRecorderTasks);
         return BaseResponseVo.ok();
     }
 
@@ -106,7 +106,11 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
         List<VideoRecorderTask> prepareList = taskList.stream().filter(item -> item.getStartTime() <= timestamp)
                 .collect(Collectors.toList());
 
-        log.info("prepare start recorder list: {}", prepareList);
+        if(prepareList.isEmpty()){
+            return;
+        }
+
+        log.info("-------------------- prepare start recorder list: {}", prepareList);
 
         // 开始录制
         BaseResponseVo<CreateTaskRspVo> streamResult;
@@ -169,6 +173,10 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
         List<VideoRecorderTask> prepareList = taskList.stream().filter(item -> item.getEndTime() <= timestamp)
                 .collect(Collectors.toList());
 
+        if(prepareList.isEmpty()) {
+            return;
+        }
+
         log.info("prepare stop recorder list: {}", prepareList);
 
         // 结束录制
@@ -192,7 +200,7 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
         updateDto.setStatus(VideoRecorderTaskStatusEnum.FINISHED.getCode());
         updateDto.setIdList(idList);
         videoRecorderTaskMapper.updateStatus(updateDto);
-        log.info("update video recorder RUNNING. id list: {}", idList);
+        log.info("update video recorder FINISHED. id list: {}", idList);
     }
 
     public void stopVideoRecorderProcess(String app, String uniqueId) {

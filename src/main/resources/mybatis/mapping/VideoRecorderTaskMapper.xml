@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.intellif.vesionbook.srstask.mapper.VideoRecorderTaskMapper">
-    
+
     <insert id="insertSelective" parameterType="com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask">
         insert into video_recorder_task
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -70,6 +70,16 @@
         </trim>
     </insert>
 
+    <insert id="insertBatch" parameterType="com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask">
+        insert into video_recorder_task
+        (app, unique_id, channel_id, origin_stream, start_time, end_time, status, path, stream_type)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.app}, #{item.uniqueId}, #{item.channelId}, #{item.originStream}, #{item.startTime},
+            #{item.endTime}, #{item.status}, #{item.path}, #{item.streamType})
+        </foreach>
+    </insert>
+
     <!-- 条件筛选 -->
     <select id="selectByParam" resultType="com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask"
             parameterType="com.intellif.vesionbook.srstask.model.dto.VideoRecorderTaskDto">
@@ -97,21 +107,20 @@
     </select>
 
     <select id="selectById" resultType="com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask">
-        SELECT
-            `id` as id, 
-            `app` as app, 
-            `unique_id` as uniqueId, 
-            `start_time` as startTime, 
-            `end_time` as endTime, 
-            `status` as status, 
-            `create_time` as createTime, 
-            `update_time` as updateTime
-        FROM
-            `video_recorder_task`
+        SELECT `id`          as id,
+               `app`         as app,
+               `unique_id`   as uniqueId,
+               `start_time`  as startTime,
+               `end_time`    as endTime,
+               `status`      as status,
+               `create_time` as createTime,
+               `update_time` as updateTime
+        FROM `video_recorder_task`
         where `id` = #{id}
     </select>
 
-    <update id="updateStatus" parameterType="com.intellif.vesionbook.srstask.model.dto.UpdateStatusVideoRecorderTaskDto">
+    <update id="updateStatus"
+            parameterType="com.intellif.vesionbook.srstask.model.dto.UpdateStatusVideoRecorderTaskDto">
         update video_recorder_task
         set status = #{status}
         <where>
@@ -124,7 +133,7 @@
             <if test="uniqueId != null and uniqueId != ''">
                 and unique_id = #{uniqueId,jdbcType=VARCHAR}
             </if>
-            <if test="idList != null and idList != ''">
+            <if test="idList != null and idList.size()>0">
                 and id in
                 <foreach collection="idList" item="item" index="index" open="(" close=")" separator=",">
                     #{item,jdbcType=BIGINT}

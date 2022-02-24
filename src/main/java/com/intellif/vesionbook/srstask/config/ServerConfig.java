@@ -33,6 +33,6 @@ public class ServerConfig {
     @Value("${clients.limit.min3:100}")
     private Integer clientsLimit;
 
-    @Value("${recorder.srs.host:192.168.12.108}")
+    @Value("${recorder.srs.host:192.168.18.151}")
     private String srsRecorderHost;
 }
