@@ -4,6 +4,7 @@ import com.intellif.vesionbook.srstask.config.ServerConfig;
 import com.intellif.vesionbook.srstask.helper.SrsClientHelper;
 import com.intellif.vesionbook.srstask.model.vo.req.SRSCallbackOnDvrVo;
 import com.intellif.vesionbook.srstask.model.vo.req.SRSCallbackOnPlayVo;
+import com.intellif.vesionbook.srstask.service.VideoRecorderTaskService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.io.FileNotFoundException;
 
 @RestController
 @Slf4j
@@ -25,8 +27,10 @@ public class CallbackController {
     SrsClientHelper srsClientHelper;
     @Resource
     ServerConfig serverConfig;
+    @Resource
+    VideoRecorderTaskService videoRecorderTaskService;
 
-    @ApiOperation(value = "播放回调接口")
+    @ApiOperation(value = "srs播放回调接口")
     @PostMapping("/on/play")
     public int onPlay(@RequestBody @Validated SRSCallbackOnPlayVo reqVo) {
         log.info("req: {}", reqVo);
@@ -38,10 +42,11 @@ public class CallbackController {
         return 0;
     }
 
-    @ApiOperation(value = "录像回调接口")
+    @ApiOperation(value = "srs录像回调接口")
     @PostMapping("/on/dvr")
-    public int onDvr(@RequestBody @Validated SRSCallbackOnDvrVo reqVo) {
+    public int onDvr(@RequestBody @Validated SRSCallbackOnDvrVo reqVo) throws FileNotFoundException {
         log.info("req: {}", reqVo);
+        videoRecorderTaskService.dealOnDvr(reqVo);
         return 0;
     }
 }

@@ -3,6 +3,7 @@ package com.intellif.vesionbook.srstask.controller;
 import com.intellif.vesionbook.srstask.model.dto.VideoRecorderTaskDto;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
 import com.intellif.vesionbook.srstask.model.vo.req.VideoRecorderTaskReqVo;
+import com.intellif.vesionbook.srstask.model.vo.rsp.VideoRecorderTaskListVo;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,8 +47,9 @@ public class VideoRecorderTaskController
     */
     @GetMapping(value = "/list")
     @ResponseBody
-    public BaseResponseVo<PageInfo<VideoRecorderTask>> selectList(VideoRecorderTaskDto videoRecorderTaskDto) {
-        PageInfo<VideoRecorderTask> list = videoRecorderTaskService.getList(videoRecorderTaskDto);
+    public BaseResponseVo<PageInfo<VideoRecorderTaskListVo>> selectList(VideoRecorderTaskDto videoRecorderTaskDto) {
+        log.info("videoRecorderTaskDto: {}", videoRecorderTaskDto);
+        PageInfo<VideoRecorderTaskListVo> list = videoRecorderTaskService.getList(videoRecorderTaskDto);
         return BaseResponseVo.ok(list);
     }
 

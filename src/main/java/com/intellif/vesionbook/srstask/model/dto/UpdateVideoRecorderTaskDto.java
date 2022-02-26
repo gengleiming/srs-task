@@ -10,11 +10,13 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class UpdateStatusVideoRecorderTaskDto implements Serializable
+public class UpdateVideoRecorderTaskDto implements Serializable
 {
     private Long id;
     private String app;
     private Long uniqueId;
+    private String ossObjectName;
+    private String path;
 
     private List<Long> idList;
 

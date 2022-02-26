@@ -137,7 +137,7 @@ public class TaskServiceImpl implements TaskService {
         if (serverConfig.getUseJavacv().equals("1")) {
             javaCVHelper.asyncPullRtspPushRtmp(originStream, app, uniqueId);
         } else {
-            Process ffmpeg = ffCommandHelper.transcodeStream(originStream, app, uniqueId, serverConfig.getSrsHost());
+            Process ffmpeg = ffCommandHelper.transcodeStream(originStream, app, uniqueId, serverConfig.getSrsHost(), null);
             if (ffmpeg == null) {
                 return false;
             }
@@ -246,7 +246,7 @@ public class TaskServiceImpl implements TaskService {
             Process process = streamTaskCache.getProcess(task.getApp(), task.getUniqueId());
             if (process == null || !process.isAlive()) {
                 Process ffmpeg = ffCommandHelper.transcodeStream(task.getOriginStream(), task.getApp(),
-                        task.getUniqueId(), serverConfig.getSrsHost());
+                        task.getUniqueId(), serverConfig.getSrsHost(), null);
                 if (ffmpeg == null) {
                     return false;
                 }

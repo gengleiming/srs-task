@@ -29,6 +29,9 @@
             <if test="status != null">
                 status,
             </if>
+            <if test="ossObjectName != null and ossObjectName != ''">
+                oss_object_name,
+            </if>
             <if test="path != null and path != ''">
                 path,
             </if>
@@ -61,6 +64,9 @@
             <if test="status != null">
                 status,
             </if>
+            <if test="ossObjectName != null and ossObjectName != ''">
+                ossObjectName,
+            </if>
             <if test="path != null and path != ''">
                 path,
             </if>
@@ -72,16 +78,16 @@
 
     <insert id="insertBatch" parameterType="com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask">
         insert into video_recorder_task
-        (app, unique_id, channel_id, origin_stream, start_time, end_time, status, path, stream_type)
+        (app, unique_id, channel_id, origin_stream, start_time, end_time, status, oss_object_name, path, stream_type)
         values
         <foreach collection="list" item="item" separator=",">
             (#{item.app}, #{item.uniqueId}, #{item.channelId}, #{item.originStream}, #{item.startTime},
-            #{item.endTime}, #{item.status}, #{item.path}, #{item.streamType})
+            #{item.endTime}, #{item.status}, #{item.ossObjectName}, #{item.path}, #{item.streamType})
         </foreach>
     </insert>
 
     <!-- 条件筛选 -->
-    <select id="selectByParam" resultType="com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask"
+    <select id="selectByParam" resultType="com.intellif.vesionbook.srstask.model.vo.rsp.VideoRecorderTaskListVo"
             parameterType="com.intellif.vesionbook.srstask.model.dto.VideoRecorderTaskDto">
         select * from video_recorder_task
         <where>
@@ -104,23 +110,15 @@
                 and end_time = #{endTime,jdbcType=BIGINT}
             </if>
         </where>
+        order by create_time desc
     </select>
 
     <select id="selectById" resultType="com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask">
-        SELECT `id`          as id,
-               `app`         as app,
-               `unique_id`   as uniqueId,
-               `start_time`  as startTime,
-               `end_time`    as endTime,
-               `status`      as status,
-               `create_time` as createTime,
-               `update_time` as updateTime
-        FROM `video_recorder_task`
-        where `id` = #{id}
+        SELECT * FROM video_recorder_task where id = #{id}
     </select>
 
     <update id="updateStatus"
-            parameterType="com.intellif.vesionbook.srstask.model.dto.UpdateStatusVideoRecorderTaskDto">
+            parameterType="com.intellif.vesionbook.srstask.model.dto.UpdateVideoRecorderTaskDto">
         update video_recorder_task
         set status = #{status}
         <where>
@@ -141,5 +139,12 @@
             </if>
         </where>
     </update>
+
+    <update id="updatePathById" parameterType="com.intellif.vesionbook.srstask.model.dto.UpdateVideoRecorderTaskDto">
+        update video_recorder_task
+        set path = #{path}, oss_object_name=#{ossObjectName}
+        where id = #{id,jdbcType=BIGINT}
+    </update>
+
 
 </mapper>

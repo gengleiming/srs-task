@@ -1,23 +1,28 @@
 package com.intellif.vesionbook.srstask.service.impl;
 
+import com.aliyuncs.auth.sts.AssumeRoleResponse;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.intellif.vesionbook.srstask.cache.VideoRecorderTaskCache;
+import com.intellif.vesionbook.srstask.config.OssConfig;
 import com.intellif.vesionbook.srstask.config.ServerConfig;
 import com.intellif.vesionbook.srstask.enums.ReturnCodeEnum;
 import com.intellif.vesionbook.srstask.enums.StreamOutputTypeEnum;
 import com.intellif.vesionbook.srstask.enums.StreamTypeEnum;
 import com.intellif.vesionbook.srstask.enums.VideoRecorderTaskStatusEnum;
 import com.intellif.vesionbook.srstask.helper.FFCommandHelper;
+import com.intellif.vesionbook.srstask.helper.OssHelper;
 import com.intellif.vesionbook.srstask.mapper.VideoRecorderTaskMapper;
-import com.intellif.vesionbook.srstask.model.dto.UpdateStatusVideoRecorderTaskDto;
+import com.intellif.vesionbook.srstask.model.dto.UpdateVideoRecorderTaskDto;
 import com.intellif.vesionbook.srstask.model.dto.VideoRecorderTaskDto;
 import com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
+import com.intellif.vesionbook.srstask.model.vo.req.SRSCallbackOnDvrVo;
 import com.intellif.vesionbook.srstask.model.vo.req.TaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.req.TimeRange;
 import com.intellif.vesionbook.srstask.model.vo.req.VideoRecorderTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
+import com.intellif.vesionbook.srstask.model.vo.rsp.VideoRecorderTaskListVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import com.intellif.vesionbook.srstask.service.VideoRecorderTaskService;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,6 +49,10 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
     VideoRecorderTaskCache videoRecorderTaskCache;
     @Resource
     ServerConfig serverConfig;
+    @Resource
+    OssHelper ossHelper;
+    @Resource
+    OssConfig ossConfig;
 
     @Override
     public BaseResponseVo<String> create(VideoRecorderTaskReqVo reqVo) {
@@ -87,9 +97,15 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
     }
 
     @Override
-    public PageInfo<VideoRecorderTask> getList(VideoRecorderTaskDto videoRecorderTaskDto) {
+    public PageInfo<VideoRecorderTaskListVo> getList(VideoRecorderTaskDto videoRecorderTaskDto) {
         PageHelper.startPage(videoRecorderTaskDto.getPage(), videoRecorderTaskDto.getPageSize());
-        List<VideoRecorderTask> list = videoRecorderTaskMapper.selectByParam(videoRecorderTaskDto);
+        List<VideoRecorderTaskListVo> list = videoRecorderTaskMapper.selectByParam(videoRecorderTaskDto);
+
+        AssumeRoleResponse.Credentials stsCredentials = ossHelper.getSTSCredentials();
+        for (VideoRecorderTaskListVo task : list) {
+            String ossObjectName = task.getOssObjectName();
+            task.setOssUrl(ossHelper.getOssUrl(ossObjectName, stsCredentials));
+        }
         return new PageInfo<>(list);
     }
 
@@ -98,15 +114,15 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
         VideoRecorderTaskDto recorderTaskDto = VideoRecorderTaskDto.builder().page(1).pageSize(10000)
                 .status(VideoRecorderTaskStatusEnum.INIT.getCode()).build();
 
-        PageInfo<VideoRecorderTask> list = getList(recorderTaskDto);
-        List<VideoRecorderTask> taskList = list.getList();
+        PageInfo<VideoRecorderTaskListVo> list = getList(recorderTaskDto);
+        List<VideoRecorderTaskListVo> taskList = list.getList();
 
         long timestamp = System.currentTimeMillis() / 1000;
         // 找到开始录制的流
-        List<VideoRecorderTask> prepareList = taskList.stream().filter(item -> item.getStartTime() <= timestamp)
+        List<VideoRecorderTaskListVo> prepareList = taskList.stream().filter(item -> item.getStartTime() <= timestamp)
                 .collect(Collectors.toList());
 
-        if(prepareList.isEmpty()){
+        if (prepareList.isEmpty()) {
             return;
         }
 
@@ -115,7 +131,7 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
         // 开始录制
         BaseResponseVo<CreateTaskRspVo> streamResult;
         List<Long> idList = new ArrayList<>();
-        for (VideoRecorderTask task : prepareList) {
+        for (VideoRecorderTaskListVo task : prepareList) {
             TaskReqVo taskReqVo = TaskReqVo.builder().app(task.getApp()).uniqueId(task.getUniqueId())
                     .originStream(task.getOriginStream()).channelId(task.getChannelId())
                     .outputType(StreamOutputTypeEnum.RTMP.getCode()).build();
@@ -137,23 +153,24 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
             String rtmpOutput = streamResult.getData().getRtmpOutput();
             // 推流，由srs自动录制
             log.info("start create cache video recorder task. recorder task id: {}, app: {}, unique id: {}, " +
-                            "origin stream: {}", task.getId(), task.getApp(), uniqueId, rtmpOutput);
-            createVideoRecorderProcess(rtmpOutput, task.getApp(), uniqueId);
+                    "origin stream: {}", task.getId(), task.getApp(), uniqueId, rtmpOutput);
+            createVideoRecorderProcess(task.getId(), rtmpOutput, task.getApp(), uniqueId);
             // 更新数据库状态，录制中
             idList.add(task.getId());
         }
 
-        UpdateStatusVideoRecorderTaskDto updateDto = new UpdateStatusVideoRecorderTaskDto();
+        UpdateVideoRecorderTaskDto updateDto = new UpdateVideoRecorderTaskDto();
         updateDto.setStatus(VideoRecorderTaskStatusEnum.RUNNING.getCode());
         updateDto.setIdList(idList);
         videoRecorderTaskMapper.updateStatus(updateDto);
         log.info("update video recorder RUNNING. id list: {}", idList);
     }
 
-    public void createVideoRecorderProcess(String originStream, String app, String uniqueId) {
+    public void createVideoRecorderProcess(Long taskId, String originStream, String app, String uniqueId) {
 
+        String recorderParam = "?taskId=" + taskId;
         // 创建流任务
-        Process ffmpeg = ffCommandHelper.transcodeStream(originStream, app, uniqueId, serverConfig.getSrsRecorderHost());
+        Process ffmpeg = ffCommandHelper.transcodeStream(originStream, app, uniqueId, serverConfig.getSrsRecorderHost(), recorderParam);
         if (ffmpeg == null) {
             return;
         }
@@ -165,15 +182,15 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
         VideoRecorderTaskDto recorderTaskDto = VideoRecorderTaskDto.builder().page(1).pageSize(10000)
                 .status(VideoRecorderTaskStatusEnum.RUNNING.getCode()).build();
 
-        PageInfo<VideoRecorderTask> list = getList(recorderTaskDto);
-        List<VideoRecorderTask> taskList = list.getList();
+        PageInfo<VideoRecorderTaskListVo> list = getList(recorderTaskDto);
+        List<VideoRecorderTaskListVo> taskList = list.getList();
 
         long timestamp = System.currentTimeMillis() / 1000;
         // 找到开始录制的流
-        List<VideoRecorderTask> prepareList = taskList.stream().filter(item -> item.getEndTime() <= timestamp)
+        List<VideoRecorderTaskListVo> prepareList = taskList.stream().filter(item -> item.getEndTime() <= timestamp)
                 .collect(Collectors.toList());
 
-        if(prepareList.isEmpty()) {
+        if (prepareList.isEmpty()) {
             return;
         }
 
@@ -181,7 +198,7 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
 
         // 结束录制
         List<Long> idList = new ArrayList<>();
-        for (VideoRecorderTask task : prepareList) {
+        for (VideoRecorderTaskListVo task : prepareList) {
             String uniqueId;
             if (task.getStreamType() == StreamTypeEnum.GB28181.getCode()) {
                 uniqueId = task.getUniqueId() + "@" + task.getChannelId();
@@ -196,7 +213,7 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
             idList.add(task.getId());
         }
 
-        UpdateStatusVideoRecorderTaskDto updateDto = new UpdateStatusVideoRecorderTaskDto();
+        UpdateVideoRecorderTaskDto updateDto = new UpdateVideoRecorderTaskDto();
         updateDto.setStatus(VideoRecorderTaskStatusEnum.FINISHED.getCode());
         updateDto.setIdList(idList);
         videoRecorderTaskMapper.updateStatus(updateDto);
@@ -205,13 +222,34 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
 
     public void stopVideoRecorderProcess(String app, String uniqueId) {
         Process process = videoRecorderTaskCache.getProcess(app, uniqueId);
-        if(process == null || !process.isAlive()) {
+        if (process == null || !process.isAlive()) {
             log.error("stop video recorder error, process not alive. app: {}, unique id: {}, process: {}",
                     app, uniqueId, process);
         } else {
             process.destroy();
         }
         videoRecorderTaskCache.clearProcess(app, uniqueId);
+    }
+
+    @Override
+    public boolean dealOnDvr(SRSCallbackOnDvrVo vo) throws FileNotFoundException {
+        String filePath = vo.getFile();
+        String objectName = ossConfig.getBucketRoot() + filePath;
+        boolean ok = ossHelper.uploadFile(filePath, objectName);
+        if(ok) {
+            String param = vo.getParam();
+            param = param.replace("?", "");
+            String[] paramList = param.split("&");
+            for (String item : paramList) {
+                if(item.startsWith("taskId=")){
+                    String taskId = item.replace("taskId=", "");
+                    UpdateVideoRecorderTaskDto dto = UpdateVideoRecorderTaskDto.builder().id(Long.valueOf(taskId)).
+                            ossObjectName(objectName).path(filePath).build();
+                    videoRecorderTaskMapper.updatePathById(dto);
+                }
+            }
+        }
+        return ok;
     }
 
 }

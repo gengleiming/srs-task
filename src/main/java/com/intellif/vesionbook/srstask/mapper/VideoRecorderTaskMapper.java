@@ -1,7 +1,8 @@
 package com.intellif.vesionbook.srstask.mapper;
 
-import com.intellif.vesionbook.srstask.model.dto.UpdateStatusVideoRecorderTaskDto;
+import com.intellif.vesionbook.srstask.model.dto.UpdateVideoRecorderTaskDto;
 import com.intellif.vesionbook.srstask.model.dto.VideoRecorderTaskDto;
+import com.intellif.vesionbook.srstask.model.vo.rsp.VideoRecorderTaskListVo;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -15,10 +16,12 @@ public interface VideoRecorderTaskMapper {
 
     void insertBatch(List<VideoRecorderTask> list);
 
-    List<VideoRecorderTask> selectByParam(VideoRecorderTaskDto videoRecorderTaskDto);
+    List<VideoRecorderTaskListVo> selectByParam(VideoRecorderTaskDto videoRecorderTaskDto);
 
     VideoRecorderTask selectById(String id);
 
-    void updateStatus(UpdateStatusVideoRecorderTaskDto updateStatusVideoRecorderTaskDto);
+    void updateStatus(UpdateVideoRecorderTaskDto updateVideoRecorderTaskDto);
+
+    void updatePathById(UpdateVideoRecorderTaskDto updateVideoRecorderTaskDto);
 
 }

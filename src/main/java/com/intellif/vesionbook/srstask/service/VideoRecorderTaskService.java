@@ -4,7 +4,11 @@ import com.github.pagehelper.PageInfo;
 import com.intellif.vesionbook.srstask.model.dto.VideoRecorderTaskDto;
 import com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
+import com.intellif.vesionbook.srstask.model.vo.req.SRSCallbackOnDvrVo;
 import com.intellif.vesionbook.srstask.model.vo.req.VideoRecorderTaskReqVo;
+import com.intellif.vesionbook.srstask.model.vo.rsp.VideoRecorderTaskListVo;
+
+import java.io.FileNotFoundException;
 
 public interface VideoRecorderTaskService
 {
@@ -12,9 +16,11 @@ public interface VideoRecorderTaskService
 
     VideoRecorderTask selectById(String id);
 
-    PageInfo<VideoRecorderTask> getList(VideoRecorderTaskDto videoRecorderTaskDto);
+    PageInfo<VideoRecorderTaskListVo> getList(VideoRecorderTaskDto videoRecorderTaskDto);
 
     void videoRecordStart();
     void videoRecordStop();
+
+    boolean dealOnDvr(SRSCallbackOnDvrVo vo) throws FileNotFoundException;
 
 }

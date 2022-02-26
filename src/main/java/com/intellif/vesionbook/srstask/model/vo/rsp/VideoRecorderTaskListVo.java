@@ -1,4 +1,4 @@
-package com.intellif.vesionbook.srstask.model.entity;
+package com.intellif.vesionbook.srstask.model.vo.rsp;
 
 import lombok.*;
 
@@ -10,7 +10,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class VideoRecorderTask implements Serializable {
+public class VideoRecorderTaskListVo implements Serializable {
 
     /**
      *
@@ -60,6 +60,11 @@ public class VideoRecorderTask implements Serializable {
      * oss存储路径
      */
     private String ossObjectName;
+
+    /**
+     * oss地址
+     */
+    private String ossUrl;
 
     /**
      * 录像存储路径

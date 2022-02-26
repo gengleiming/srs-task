@@ -54,8 +54,11 @@ public class FFCommandHelper {
      * @author zxzhang
      * @date 2019/12/10
      */
-    public Process transcodeStream(String originUrl, String app, String uniqueId, String srsHost) {
-        String pushUrl = "rtmp://" + srsHost + "/" + app + "/" + uniqueId;
+    public Process transcodeStream(String originUrl, String app, String uniqueId, String srsHost, String param) {
+        if(param==null) {
+            param = "";
+        }
+        String pushUrl = "rtmp://" + srsHost + "/" + app + "/" + uniqueId + param;
         LinkedList<String> ffmpegCmdList;
         if(originUrl.startsWith(StreamTypeEnum.RTSP.getName())) {
             ffmpegCmdList = ffmpegCommandList(originUrl, pushUrl, StreamTypeEnum.RTSP.getCode());
