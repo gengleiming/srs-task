@@ -18,7 +18,7 @@ public interface VideoRecorderTaskMapper {
 
     List<VideoRecorderTaskListVo> selectByParam(VideoRecorderTaskDto videoRecorderTaskDto);
 
-    VideoRecorderTask selectById(String id);
+    VideoRecorderTask selectById(Long id);
 
     void updateStatus(UpdateVideoRecorderTaskDto updateVideoRecorderTaskDto);
 

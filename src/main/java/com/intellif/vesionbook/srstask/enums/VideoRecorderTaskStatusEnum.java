@@ -6,7 +6,8 @@ public enum VideoRecorderTaskStatusEnum {
     INIT(1, "未开始"),
     RUNNING(2, "运行中"),
     FINISHED(3, "已结束"),
-    ERROR(4, "任务异常"),
+    EXPIRE(4, "任务超时"),
+    ERROR(5, "任务异常"),
     ;
 
     private final int code;

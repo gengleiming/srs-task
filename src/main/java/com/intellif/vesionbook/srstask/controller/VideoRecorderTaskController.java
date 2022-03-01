@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import com.intellif.vesionbook.srstask.service.VideoRecorderTaskService;
@@ -15,7 +16,7 @@ import com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask;
 import com.github.pagehelper.PageInfo;
 
 @Slf4j
-@Controller
+@RestController
 @RequestMapping(value = "/api/video/recorder/task")
 public class VideoRecorderTaskController
 {
@@ -26,8 +27,7 @@ public class VideoRecorderTaskController
     **  新增
     */
     @PostMapping(value = "/add")
-    @ResponseBody
-    public BaseResponseVo<String> add(@RequestBody VideoRecorderTaskReqVo reqVo) {
+    public BaseResponseVo<String> add(@RequestBody @Validated VideoRecorderTaskReqVo reqVo) {
         log.info("create video recorder task reqVo: {}", reqVo);
         return videoRecorderTaskService.create(reqVo);
     }
@@ -35,9 +35,8 @@ public class VideoRecorderTaskController
     /**
     **  查询单个
     */
-    @GetMapping(value = "/get")
-    @ResponseBody
-    public BaseResponseVo<VideoRecorderTask> selectById(String id) {
+    @PostMapping(value = "/get/{id}")
+    public BaseResponseVo<VideoRecorderTask> selectById(@PathVariable("id") Long id) {
         VideoRecorderTask resp = videoRecorderTaskService.selectById(id);
         return BaseResponseVo.ok(resp);
     }
@@ -45,11 +44,10 @@ public class VideoRecorderTaskController
     /**
     **  查询列表
     */
-    @GetMapping(value = "/list")
-    @ResponseBody
-    public BaseResponseVo<PageInfo<VideoRecorderTaskListVo>> selectList(VideoRecorderTaskDto videoRecorderTaskDto) {
+    @PostMapping(value = "/list")
+    public BaseResponseVo<PageInfo<VideoRecorderTaskListVo>> selectList(@RequestBody VideoRecorderTaskDto videoRecorderTaskDto) {
         log.info("videoRecorderTaskDto: {}", videoRecorderTaskDto);
-        PageInfo<VideoRecorderTaskListVo> list = videoRecorderTaskService.getList(videoRecorderTaskDto);
+        PageInfo<VideoRecorderTaskListVo> list = videoRecorderTaskService.getList(videoRecorderTaskDto, true);
         return BaseResponseVo.ok(list);
     }
 

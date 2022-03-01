@@ -60,7 +60,6 @@ public class StreamDeadMapCache {
 
 
     public void clearUnusedGB() {
-        log.info("检测关闭 dead gb28181...");
         List<GetGBDataFromSrsRspVo.ChannelData> gbChannels = srsClientHelper.getGBChannels();
 
         List<String> removeList = new ArrayList<>();
@@ -74,6 +73,7 @@ public class StreamDeadMapCache {
             CacheDeadDto value = entry.getValue();
             long count = gbChannels.stream().filter(item -> item.getApp().equals(value.getApp()) && item.getStream().equals(value.getName())).count();
             if(count > 0) {
+                log.info("检测关闭 dead gb28181 stream id: {}", value.getName());
                 String id = value.getName().split("@")[0];
                 String chid = value.getName().split("@")[1];
                 srsClientHelper.closeChannel(id, chid);
@@ -87,8 +87,6 @@ public class StreamDeadMapCache {
     }
 
     public void closeUnusedRtsp() {
-        log.info("scheduled 检测关闭 dead Rtsp...");
-
         List<String> removeList = new ArrayList<>();
         for(Map.Entry<String, CacheDeadDto> entry: deadMap.entrySet()) {
             String key = entry.getKey();

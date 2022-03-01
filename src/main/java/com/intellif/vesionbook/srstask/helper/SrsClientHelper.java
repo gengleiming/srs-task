@@ -322,7 +322,6 @@ public class SrsClientHelper {
     }
 
     public void closeErrorGBChannels() {
-        log.info("开始检查关闭异常的通道");
         List<GetGBDataFromSrsRspVo.SessionData> sessions = getAllGBSessions();
         if(sessions == null || sessions.isEmpty()) {
             return;
@@ -351,12 +350,13 @@ public class SrsClientHelper {
 
         inviteOkChannels.removeAll(playChannels);
 
-        log.info("error channels: {}", inviteOkChannels);
-
-        for (String errorChannel : inviteOkChannels) {
-            String[] channelSplit = errorChannel.split("@");
-            Boolean success = closeChannel(channelSplit[0], channelSplit[1]);
-            log.info("close channel: {}, success: {}", errorChannel, success);
+        if(inviteOkChannels.size() > 0) {
+            log.info("error channels: {}", inviteOkChannels);
+            for (String errorChannel : inviteOkChannels) {
+                String[] channelSplit = errorChannel.split("@");
+                Boolean success = closeChannel(channelSplit[0], channelSplit[1]);
+                log.info("close channel: {}, success: {}", errorChannel, success);
+            }
         }
     }
 

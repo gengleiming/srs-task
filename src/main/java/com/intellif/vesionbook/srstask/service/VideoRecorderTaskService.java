@@ -14,9 +14,9 @@ public interface VideoRecorderTaskService
 {
     BaseResponseVo<String> create(VideoRecorderTaskReqVo model);
 
-    VideoRecorderTask selectById(String id);
+    VideoRecorderTask selectById(Long id);
 
-    PageInfo<VideoRecorderTaskListVo> getList(VideoRecorderTaskDto videoRecorderTaskDto);
+    PageInfo<VideoRecorderTaskListVo> getList(VideoRecorderTaskDto videoRecorderTaskDto, boolean withShareUrl);
 
     void videoRecordStart();
     void videoRecordStop();

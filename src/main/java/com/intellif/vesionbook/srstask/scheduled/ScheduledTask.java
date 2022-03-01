@@ -40,10 +40,10 @@ public class ScheduledTask {
     }
 
     /**
-     * 每3秒钟检测录像任务，开启录制
+     * 每5秒钟检测录像任务，开启录制
      */
     @Async
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 5000)
     public void checkVideoRecorderStart() {
         videoRecorderTaskService.videoRecordStart();
     }
@@ -52,7 +52,7 @@ public class ScheduledTask {
      * 每3秒钟检测录像任务，关闭录制
      */
     @Async
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 5000)
     public void checkVideoRecorderStop() {
         videoRecorderTaskService.videoRecordStop();
     }

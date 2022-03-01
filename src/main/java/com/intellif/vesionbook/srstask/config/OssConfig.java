@@ -7,8 +7,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Data
 public class OssConfig {
-    @Value("${oss.url.pre}")
-    private String ossUrlPre;
     @Value("${oss.endpoint}")
     private String endpoint;
     @Value("${oss.accessKey.id}")
@@ -21,10 +19,12 @@ public class OssConfig {
     private String bucketRoot;
     @Value("${oss.region.id}")
     private String regionId;
-    @Value("${oss.role.arn}")
-    private String roleArn;
-    @Value("${oss.role.sessionName}")
-    private String roleSessionName;
+    @Value("${oss.sts.roleArn}")
+    private String stsRoleArn;
+    @Value("${oss.sts.roleSessionName}")
+    private String stsRoleSessionName;
     @Value("${oss.sts.durationSeconds}")
     private Long stsDurationSeconds;
+    @Value("${oss.zone.id:UTC}")
+    private String ossZoneId;
 }

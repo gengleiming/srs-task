@@ -1,5 +1,6 @@
 package com.intellif.vesionbook.srstask.service.impl;
 
+import com.aliyun.oss.OSS;
 import com.aliyuncs.auth.sts.AssumeRoleResponse;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -92,19 +93,24 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
     }
 
     @Override
-    public VideoRecorderTask selectById(String id) {
+    public VideoRecorderTask selectById(Long id) {
         return videoRecorderTaskMapper.selectById(id);
     }
 
     @Override
-    public PageInfo<VideoRecorderTaskListVo> getList(VideoRecorderTaskDto videoRecorderTaskDto) {
+    public PageInfo<VideoRecorderTaskListVo> getList(VideoRecorderTaskDto videoRecorderTaskDto, boolean withShareUrl) {
         PageHelper.startPage(videoRecorderTaskDto.getPage(), videoRecorderTaskDto.getPageSize());
         List<VideoRecorderTaskListVo> list = videoRecorderTaskMapper.selectByParam(videoRecorderTaskDto);
 
-        AssumeRoleResponse.Credentials stsCredentials = ossHelper.getSTSCredentials();
-        for (VideoRecorderTaskListVo task : list) {
-            String ossObjectName = task.getOssObjectName();
-            task.setOssUrl(ossHelper.getOssUrl(ossObjectName, stsCredentials));
+        if(withShareUrl) {
+            OSS ossStsCredentialsClient = ossHelper.getOssStsCredentialsClient();
+            for (VideoRecorderTaskListVo task : list) {
+                String ossObjectName = task.getOssObjectName();
+                if(!StringUtils.isEmpty(ossObjectName)) {
+                    task.setOssUrl(ossHelper.getOssUrl(ossObjectName, ossStsCredentialsClient));
+                }
+            }
+            ossStsCredentialsClient.shutdown();
         }
         return new PageInfo<>(list);
     }
@@ -114,56 +120,64 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
         VideoRecorderTaskDto recorderTaskDto = VideoRecorderTaskDto.builder().page(1).pageSize(10000)
                 .status(VideoRecorderTaskStatusEnum.INIT.getCode()).build();
 
-        PageInfo<VideoRecorderTaskListVo> list = getList(recorderTaskDto);
+        PageInfo<VideoRecorderTaskListVo> list = getList(recorderTaskDto, false);
         List<VideoRecorderTaskListVo> taskList = list.getList();
 
         long timestamp = System.currentTimeMillis() / 1000;
-        // 找到开始录制的流
-        List<VideoRecorderTaskListVo> prepareList = taskList.stream().filter(item -> item.getStartTime() <= timestamp)
+        // 找到开始录制的任务
+        List<VideoRecorderTaskListVo> prepareList = taskList.stream().filter(item -> item.getStartTime() <= timestamp &&
+                        item.getEndTime() > timestamp).collect(Collectors.toList());
+        // 找到超时录制的任务
+        List<VideoRecorderTaskListVo> expireList = taskList.stream().filter(item -> item.getEndTime() <= timestamp)
                 .collect(Collectors.toList());
 
-        if (prepareList.isEmpty()) {
-            return;
-        }
-
-        log.info("-------------------- prepare start recorder list: {}", prepareList);
-
         // 开始录制
-        BaseResponseVo<CreateTaskRspVo> streamResult;
-        List<Long> idList = new ArrayList<>();
-        for (VideoRecorderTaskListVo task : prepareList) {
-            TaskReqVo taskReqVo = TaskReqVo.builder().app(task.getApp()).uniqueId(task.getUniqueId())
-                    .originStream(task.getOriginStream()).channelId(task.getChannelId())
-                    .outputType(StreamOutputTypeEnum.RTMP.getCode()).build();
+        if(!prepareList.isEmpty()) {
+            log.info("start recorder list: {}", prepareList);
+            BaseResponseVo<CreateTaskRspVo> streamResult;
+            for (VideoRecorderTaskListVo task : prepareList) {
+                TaskReqVo taskReqVo = TaskReqVo.builder().app(task.getApp()).uniqueId(task.getUniqueId())
+                        .originStream(task.getOriginStream()).channelId(task.getChannelId())
+                        .outputType(StreamOutputTypeEnum.RTMP.getCode()).build();
 
-            String uniqueId;
-            if (task.getStreamType() == StreamTypeEnum.GB28181.getCode()) {
-                streamResult = taskService.getGBStream(taskReqVo);
-                uniqueId = task.getUniqueId() + "@" + task.getChannelId();
-            } else {
-                streamResult = taskService.getOrCreateStreamTask(taskReqVo);
-                uniqueId = task.getUniqueId();
+                String uniqueId;
+                if (task.getStreamType() == StreamTypeEnum.GB28181.getCode()) {
+                    streamResult = taskService.getGBStream(taskReqVo);
+                    uniqueId = task.getUniqueId() + "@" + task.getChannelId();
+                } else {
+                    streamResult = taskService.getOrCreateStreamTask(taskReqVo);
+                    uniqueId = task.getUniqueId();
+                }
+
+                if (!streamResult.isSuccess()) {
+                    log.error("video recorder. get rtsp stream result error: {}", streamResult);
+                    return;
+                }
+
+                String rtmpOutput = streamResult.getData().getRtmpOutput();
+                // 推流，由srs自动录制
+                log.info("start create cache video recorder task. recorder task id: {}, app: {}, unique id: {}, " +
+                        "origin stream: {}", task.getId(), task.getApp(), uniqueId, rtmpOutput);
+                createVideoRecorderProcess(task.getId(), rtmpOutput, task.getApp(), uniqueId);
             }
 
-            if (!streamResult.isSuccess()) {
-                log.error("video recorder. get rtsp stream result error: {}", streamResult);
-                return;
-            }
-
-            String rtmpOutput = streamResult.getData().getRtmpOutput();
-            // 推流，由srs自动录制
-            log.info("start create cache video recorder task. recorder task id: {}, app: {}, unique id: {}, " +
-                    "origin stream: {}", task.getId(), task.getApp(), uniqueId, rtmpOutput);
-            createVideoRecorderProcess(task.getId(), rtmpOutput, task.getApp(), uniqueId);
-            // 更新数据库状态，录制中
-            idList.add(task.getId());
+            UpdateVideoRecorderTaskDto updateDto = new UpdateVideoRecorderTaskDto();
+            updateDto.setStatus(VideoRecorderTaskStatusEnum.RUNNING.getCode());
+            List<Long> idList = prepareList.stream().map(VideoRecorderTaskListVo::getId).collect(Collectors.toList());
+            updateDto.setIdList(idList);
+            videoRecorderTaskMapper.updateStatus(updateDto);
+            log.info("update video recorder RUNNING. id list: {}", idList);
         }
 
-        UpdateVideoRecorderTaskDto updateDto = new UpdateVideoRecorderTaskDto();
-        updateDto.setStatus(VideoRecorderTaskStatusEnum.RUNNING.getCode());
-        updateDto.setIdList(idList);
-        videoRecorderTaskMapper.updateStatus(updateDto);
-        log.info("update video recorder RUNNING. id list: {}", idList);
+        if(!expireList.isEmpty()) {
+            log.info("start recorder expire list: {}", expireList);
+            UpdateVideoRecorderTaskDto updateDto = new UpdateVideoRecorderTaskDto();
+            updateDto.setStatus(VideoRecorderTaskStatusEnum.EXPIRE.getCode());
+            List<Long> idList = expireList.stream().map(VideoRecorderTaskListVo::getId).collect(Collectors.toList());
+            updateDto.setIdList(idList);
+            videoRecorderTaskMapper.updateStatus(updateDto);
+            log.info("update video recorder EXPIRE. id list: {}", idList);
+        }
     }
 
     public void createVideoRecorderProcess(Long taskId, String originStream, String app, String uniqueId) {
@@ -182,11 +196,11 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
         VideoRecorderTaskDto recorderTaskDto = VideoRecorderTaskDto.builder().page(1).pageSize(10000)
                 .status(VideoRecorderTaskStatusEnum.RUNNING.getCode()).build();
 
-        PageInfo<VideoRecorderTaskListVo> list = getList(recorderTaskDto);
+        PageInfo<VideoRecorderTaskListVo> list = getList(recorderTaskDto, false);
         List<VideoRecorderTaskListVo> taskList = list.getList();
 
         long timestamp = System.currentTimeMillis() / 1000;
-        // 找到开始录制的流
+        // 找到正在录制的流
         List<VideoRecorderTaskListVo> prepareList = taskList.stream().filter(item -> item.getEndTime() <= timestamp)
                 .collect(Collectors.toList());
 
@@ -198,6 +212,7 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
 
         // 结束录制
         List<Long> idList = new ArrayList<>();
+        List<Long> errorList = new ArrayList<>();
         for (VideoRecorderTaskListVo task : prepareList) {
             String uniqueId;
             if (task.getStreamType() == StreamTypeEnum.GB28181.getCode()) {
@@ -208,27 +223,41 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
             // 停止推流，由srs自动结束录制
             log.info("stop video recorder task. recorder task id: {}, app: {}, unique id: {}",
                     task.getId(), task.getApp(), uniqueId);
-            stopVideoRecorderProcess(task.getApp(), uniqueId);
-            // 更新数据库状态，结束录制
-            idList.add(task.getId());
+            boolean success = stopVideoRecorderProcess(task.getApp(), uniqueId);
+            if(success){
+                idList.add(task.getId());
+            } else {
+                errorList.add(task.getId());
+            }
         }
 
-        UpdateVideoRecorderTaskDto updateDto = new UpdateVideoRecorderTaskDto();
-        updateDto.setStatus(VideoRecorderTaskStatusEnum.FINISHED.getCode());
-        updateDto.setIdList(idList);
-        videoRecorderTaskMapper.updateStatus(updateDto);
-        log.info("update video recorder FINISHED. id list: {}", idList);
+        if(!idList.isEmpty()) {
+            UpdateVideoRecorderTaskDto updateDto = new UpdateVideoRecorderTaskDto();
+            updateDto.setStatus(VideoRecorderTaskStatusEnum.FINISHED.getCode());
+            updateDto.setIdList(idList);
+            videoRecorderTaskMapper.updateStatus(updateDto);
+            log.info("update video recorder FINISHED. id list: {}", idList);
+        }
+        if(!errorList.isEmpty()) {
+            UpdateVideoRecorderTaskDto updateDto = new UpdateVideoRecorderTaskDto();
+            updateDto.setStatus(VideoRecorderTaskStatusEnum.ERROR.getCode());
+            updateDto.setIdList(errorList);
+            videoRecorderTaskMapper.updateStatus(updateDto);
+            log.info("update video recorder ERROR. error list: {}", errorList);
+        }
     }
 
-    public void stopVideoRecorderProcess(String app, String uniqueId) {
+    public boolean stopVideoRecorderProcess(String app, String uniqueId) {
         Process process = videoRecorderTaskCache.getProcess(app, uniqueId);
         if (process == null || !process.isAlive()) {
             log.error("stop video recorder error, process not alive. app: {}, unique id: {}, process: {}",
                     app, uniqueId, process);
+            return false;
         } else {
             process.destroy();
         }
         videoRecorderTaskCache.clearProcess(app, uniqueId);
+        return true;
     }
 
     @Override

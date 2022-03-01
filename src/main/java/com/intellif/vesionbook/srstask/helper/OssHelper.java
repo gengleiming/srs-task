@@ -10,9 +10,7 @@ import com.aliyuncs.IAcsClient;
 import com.aliyuncs.auth.sts.AssumeRoleRequest;
 import com.aliyuncs.auth.sts.AssumeRoleResponse;
 import com.aliyuncs.exceptions.ClientException;
-import com.aliyuncs.exceptions.ServerException;
 import com.aliyuncs.profile.DefaultProfile;
-import com.google.gson.Gson;
 import com.intellif.vesionbook.srstask.config.OssConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,9 +18,9 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.io.File;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 @Component
@@ -35,8 +33,8 @@ public class OssHelper {
         OSS ossClient = new OSSClientBuilder().build(ossConfig.getEndpoint(), ossConfig.getAccessKeyId(),
                 ossConfig.getAccessKeySecret());
         if (!ossClient.doesBucketExist(ossConfig.getBucketName())) {
-            log.info("您的Bucket不存在，创建Bucket：{}", ossConfig.getBucketName());
-            ossClient.createBucket(ossConfig.getBucketName());
+            log.error("您的Bucket不存在，Bucket：{}", ossConfig.getBucketName());
+//            ossClient.createBucket(ossConfig.getBucketName());
         }
         return ossClient;
     }
@@ -59,59 +57,50 @@ public class OssHelper {
         }
     }
 
-    public AssumeRoleResponse.Credentials getSTSCredentials() {
+    public OSS getOssStsCredentialsClient() {
         DefaultProfile profile = DefaultProfile.getProfile(ossConfig.getRegionId(), ossConfig.getAccessKeyId(),
                 ossConfig.getAccessKeySecret());
         IAcsClient client = new DefaultAcsClient(profile);
 
         AssumeRoleRequest request = new AssumeRoleRequest();
         request.setDurationSeconds(ossConfig.getStsDurationSeconds());
-        request.setRoleArn(ossConfig.getRoleArn());
-        request.setRoleSessionName(ossConfig.getRoleSessionName());
+        request.setRoleArn(ossConfig.getStsRoleArn());
+        request.setRoleSessionName(ossConfig.getStsRoleSessionName());
 
-        //发起请求，并得到响应。
         try {
             AssumeRoleResponse response = client.getAcsResponse(request);
-            System.out.println(new Gson().toJson(response));
-            return response.getCredentials();
-        } catch (ServerException e) {
-            e.printStackTrace();
+            AssumeRoleResponse.Credentials credentials = response.getCredentials();
+
+            if(credentials == null) {
+                return null;
+            }
+
+            String stsAccessKeyId = credentials.getAccessKeyId();
+            String stsAccessKeySecret = credentials.getAccessKeySecret();
+            String stsSecurityToken = credentials.getSecurityToken();
+
+            return new OSSClientBuilder().build(ossConfig.getEndpoint(), stsAccessKeyId,
+                    stsAccessKeySecret, stsSecurityToken);
         } catch (ClientException e) {
-            System.out.println("ErrCode:" + e.getErrCode());
-            System.out.println("ErrMsg:" + e.getErrMsg());
-            System.out.println("RequestId:" + e.getRequestId());
+            log.error("get sts credentials error. error code: {}, error msg: {}, request id: {}",
+                    e.getErrCode(), e.getErrMsg(), e.getRequestId());
+        } finally {
+            client.shutdown();
         }
         return null;
     }
 
-    public String getOssUrl(String objectName, AssumeRoleResponse.Credentials credentials) {
-        String ossUrl = ossConfig.getOssUrlPre() + ossConfig.getBucketName() + "." + ossConfig.getEndpoint() + "/" + objectName;
-        if (credentials == null) {
-            return ossUrl;
-        }
+    public String getOssUrl(String objectName, OSS ossStsCredentialsClient) {
 
-        String stsAccessKeyId = credentials.getAccessKeyId();
-        String stsAccessKeySecret = credentials.getAccessKeySecret();
-        String stsSecurityToken = credentials.getSecurityToken();
-        String stsExpiration = credentials.getExpiration();
-
-        LocalDateTime localDateTime = LocalDateTime.parse(stsExpiration);
-        Date date = Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
-
-
-        OSS ossClient = new OSSClientBuilder().build(ossConfig.getEndpoint(), stsAccessKeyId,
-                stsAccessKeySecret, stsSecurityToken);
+        LocalDateTime localDateTime = LocalDateTime.now().plusSeconds(ossConfig.getStsDurationSeconds());
+        Date date = Date.from(localDateTime.atZone(ZoneId.of(ossConfig.getOssZoneId())).toInstant());
 
         try {
-            URL url = ossClient.generatePresignedUrl(ossConfig.getBucketName(), objectName, date);
+            URL url = ossStsCredentialsClient.generatePresignedUrl(ossConfig.getBucketName(), objectName, date);
             return url.toString();
         } catch (Exception e) {
             log.error("generate pre signed url error. bucket name: {}, object name: {}, expire date: {}",
                     ossConfig.getBucketName(), objectName, date);
-        }finally {
-            if(ossClient != null) {
-                ossClient.shutdown();
-            }
         }
         return null;
     }

@@ -94,6 +94,12 @@
             <if test="id != null and id != ''">
                 and id = #{id,jdbcType=BIGINT}
             </if>
+            <if test="idList != null and idList.size()>0">
+                and id in
+                <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </if>
             <if test="app != null and app != ''">
                 and app = #{app,jdbcType=VARCHAR}
             </if>
