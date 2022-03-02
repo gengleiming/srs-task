@@ -27,7 +27,7 @@ public class ApplicationController {
 
     @ApiOperation(value = "连通性测试")
     @GetMapping("/")
-    public String index(){
+    public String index() {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();
         return "<h1>Hello, SRS Task!</h1><br/> server start at : " + format.format(new Date(bean.getStartTime()));

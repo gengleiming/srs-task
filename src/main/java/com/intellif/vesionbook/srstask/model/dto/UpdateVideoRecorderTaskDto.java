@@ -10,8 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class UpdateVideoRecorderTaskDto implements Serializable
-{
+public class UpdateVideoRecorderTaskDto implements Serializable {
     private Long id;
     private String app;
     private Long uniqueId;

@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
-
 import static org.bytedeco.ffmpeg.global.avcodec.av_packet_unref;
 
 /**
@@ -92,7 +91,7 @@ public class JavaCVHelper {
 
             AVFormatContext oc = null;
             // 封装格式flv
-            if(output.startsWith("rtmp")) {
+            if (output.startsWith("rtmp")) {
                 recorder.setFormat("flv");
                 recorder.setAudioCodecName("aac");
                 recorder.setVideoCodec(grabber.getVideoCodec());

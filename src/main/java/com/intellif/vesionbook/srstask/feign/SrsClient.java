@@ -24,7 +24,7 @@ public interface SrsClient {
 
     @GetMapping(value = "/api/v1/gb28181")
     String getGBDataNative(@RequestParam("action") String action, @RequestParam("id") String id,
-                                    @RequestParam("chid") String chid);
+                           @RequestParam("chid") String chid);
 
 
     default GetGBDataFromSrsRspVo getGBData(@RequestParam("action") String action, @RequestParam("id") String id,

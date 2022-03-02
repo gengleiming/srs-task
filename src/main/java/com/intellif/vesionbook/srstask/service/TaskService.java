@@ -12,13 +12,10 @@ import java.util.List;
 public interface TaskService {
 
     BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(TaskReqVo taskReqVo);
+
     BaseResponseVo<String> closeRtspStreamTask(CloseTaskReqVo closeTaskReqVo);
 
     BaseResponseVo<String> syncStreamTask(SyncReqVo syncReqVo);
-
-    Integer recoverForeverStreamTask();
-
-    Integer cleanOldTaskWhileStart();
 
     BaseResponseVo<List<StreamTask>> aliveStreamTaskList(TaskListReqVo taskListReqVo);
 

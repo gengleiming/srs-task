@@ -341,7 +341,7 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
     public BaseResponseVo<GetOssUrlRspVo> getOssUrl(GetOssUrlReqVo vo) {
         GetOssUrlRspVo rspVo = new GetOssUrlRspVo();
         OSS ossStsCredentialsClient = ossHelper.getOssStsCredentialsClient();
-        if(ossStsCredentialsClient == null) {
+        if (ossStsCredentialsClient == null) {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_OSS_CLIENT_INIT_FAILED);
         }
         try {

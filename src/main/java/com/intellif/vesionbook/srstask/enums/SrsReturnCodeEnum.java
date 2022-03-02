@@ -37,6 +37,19 @@ public enum SrsReturnCodeEnum {
         this.message = message;
     }
 
+    public static SrsReturnCodeEnum get(int resultCode) {
+        if (resultCode > 0) {
+            return null;
+        }
+        for (SrsReturnCodeEnum c : SrsReturnCodeEnum
+                .values()) {
+            if (c.getResultCode() == resultCode) {
+                return c;
+            }
+        }
+        return null;
+    }
+
     public int getResultCode() {
         return resultCode;
     }
@@ -47,19 +60,6 @@ public enum SrsReturnCodeEnum {
 
     public String getName() {
         return name;
-    }
-
-    public static SrsReturnCodeEnum get(int resultCode) {
-        if (resultCode > 0) {
-            return null;
-        }
-        for (SrsReturnCodeEnum c : SrsReturnCodeEnum
-            .values()) {
-            if (c.getResultCode() == resultCode) {
-                return c;
-            }
-        }
-        return null;
     }
 
     @Override

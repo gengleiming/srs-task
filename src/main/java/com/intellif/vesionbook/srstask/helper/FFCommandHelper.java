@@ -23,14 +23,14 @@ public class FFCommandHelper {
     @Resource
     private ServerConfig serverConfig;
 
-    public LinkedList<String> ffmpegCommandList(String originUrl, String pushUrl, int streamType){
+    public LinkedList<String> ffmpegCommandList(String originUrl, String pushUrl, int streamType) {
         //拉流推流，视频转码
         LinkedList<String> ffmpegCmdList = new LinkedList<>();
         ffmpegCmdList.add("ffmpeg");
         ffmpegCmdList.add("-v");
         ffmpegCmdList.add(serverConfig.getFfmpegLogLevel());
         ffmpegCmdList.add("-re");
-        if(streamType == StreamTypeEnum.RTSP.getCode()) {
+        if (streamType == StreamTypeEnum.RTSP.getCode()) {
             ffmpegCmdList.add("-rtsp_transport");
             ffmpegCmdList.add("tcp");
         }
@@ -49,20 +49,21 @@ public class FFCommandHelper {
 
     /**
      * 拉流推流，分发HTTP-Hlv和WebRTC地址
+     *
      * @param originUrl 拉流源地址
      * @return
      * @author zxzhang
      * @date 2019/12/10
      */
     public Process transcodeStream(String originUrl, String app, String uniqueId, String srsHost, String param) {
-        if(param==null) {
+        if (param == null) {
             param = "";
         }
         String pushUrl = "rtmp://" + srsHost + "/" + app + "/" + uniqueId + param;
         LinkedList<String> ffmpegCmdList;
-        if(originUrl.startsWith(StreamTypeEnum.RTSP.getName())) {
+        if (originUrl.startsWith(StreamTypeEnum.RTSP.getName())) {
             ffmpegCmdList = ffmpegCommandList(originUrl, pushUrl, StreamTypeEnum.RTSP.getCode());
-        } else if(originUrl.startsWith(StreamTypeEnum.RTMP.getName())) {
+        } else if (originUrl.startsWith(StreamTypeEnum.RTMP.getName())) {
             ffmpegCmdList = ffmpegCommandList(originUrl, pushUrl, StreamTypeEnum.RTMP.getCode());
         } else {
             log.error("origin stream error. origin stream: {}", originUrl);

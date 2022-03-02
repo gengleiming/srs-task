@@ -50,6 +50,7 @@ public class StreamTaskCache {
         String taskKey = getTaskThreadKey(app, uniqueId);
         return taskThreadMap.get(taskKey);
     }
+
     public void clearThread(String app, String uniqueId) {
         String taskKey = getTaskThreadKey(app, uniqueId);
         taskThreadMap.remove(taskKey);

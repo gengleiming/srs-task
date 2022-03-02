@@ -32,50 +32,50 @@ public class BaseResponseVo<T> {
 
     public static <T> BaseResponseVo<T> ok() {
         return new BaseResponseVo<>(ReturnCodeEnum.SUCCESS.getResultCode(),
-            ReturnCodeEnum.SUCCESS.getName(), ReturnCodeEnum.SUCCESS.getMessage(),
-            null);
+                ReturnCodeEnum.SUCCESS.getName(), ReturnCodeEnum.SUCCESS.getMessage(),
+                null);
     }
 
     public static <T> BaseResponseVo<T> ok(T data) {
         return new BaseResponseVo<>(ReturnCodeEnum.SUCCESS.getResultCode(),
-            ReturnCodeEnum.SUCCESS.getName(), ReturnCodeEnum.SUCCESS.getMessage(),
-            data);
+                ReturnCodeEnum.SUCCESS.getName(), ReturnCodeEnum.SUCCESS.getMessage(),
+                data);
     }
 
     public static <T> BaseResponseVo<T> ok(T data, String respMessage) {
         return new BaseResponseVo<>(ReturnCodeEnum.SUCCESS.getResultCode(),
-            ReturnCodeEnum.SUCCESS.getName(), respMessage, data);
+                ReturnCodeEnum.SUCCESS.getName(), respMessage, data);
     }
 
     public static <T> BaseResponseVo<T> error(ReturnCodeEnum resultCodeEnum) {
         return error(resultCodeEnum.getResultCode(), resultCodeEnum.getName(),
-            resultCodeEnum.getMessage());
+                resultCodeEnum.getMessage());
     }
 
     public static <T> BaseResponseVo<T> error(ReturnCodeEnum resultCodeEnum,
-        String errorMsg) {
+                                              String errorMsg) {
         return error(resultCodeEnum.getResultCode(), resultCodeEnum.getName(),
-            errorMsg);
+                errorMsg);
     }
 
     public static <T> BaseResponseVo<T> error(int respCode, String respMark, String errorMessage) {
         return new BaseResponseVo<>(respCode,
-            respMark, errorMessage, null);
+                respMark, errorMessage, null);
     }
 
     public static <T> BaseResponseVo<T> invalidParam(String errorMessage) {
         return new BaseResponseVo<>(ReturnCodeEnum.PARAM_INVALID.getResultCode(),
-            ReturnCodeEnum.PARAM_INVALID.getName(), errorMessage, null);
+                ReturnCodeEnum.PARAM_INVALID.getName(), errorMessage, null);
     }
 
     public static <T> BaseResponseVo<T> error(ReturnCodeEnum resultCodeEnum, T data) {
         return error(resultCodeEnum.getResultCode(), resultCodeEnum.getName(),
-            resultCodeEnum.getMessage(), data);
+                resultCodeEnum.getMessage(), data);
     }
 
     public static <T> BaseResponseVo<T> error(int respCode, String respMark, String errorMessage, T data) {
         return new BaseResponseVo<>(respCode,
-            respMark, errorMessage, data);
+                respMark, errorMessage, data);
     }
 
     public boolean isSuccess() {

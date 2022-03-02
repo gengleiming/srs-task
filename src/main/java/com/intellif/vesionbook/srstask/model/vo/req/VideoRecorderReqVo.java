@@ -3,8 +3,6 @@ package com.intellif.vesionbook.srstask.model.vo.req;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 public class VideoRecorderReqVo {
     @ApiModelProperty(value = "应用ID", required = true, example = "garden")

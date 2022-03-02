@@ -19,15 +19,16 @@ public class ClientCallbackHelper {
     @Resource
     RestTemplate restTemplate;
 
-    public BaseResponseVo<String> recorderFileCallbackRequest(String url, RecorderFileClientCallbackVo vo) {
+    public void recorderFileCallbackRequest(String url, RecorderFileClientCallbackVo vo) {
         HttpEntity<RecorderFileClientCallbackVo> request = new HttpEntity<>(vo);
-        ResponseEntity<String> response = restTemplate.postForEntity(url, request , String.class );
-        if(response.getStatusCode() == HttpStatus.OK) {
-            return BaseResponseVo.ok();
+        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            BaseResponseVo.ok();
+            return;
         }
         log.error("callback error. url: {}, vo: {}, status code: {}, response: {}",
                 url, vo, response.getStatusCode(), response.getBody());
-        return BaseResponseVo.error(ReturnCodeEnum.ERROR_VIDEO_RECORDER_CALLBACK_REQUEST_ERROR);
+        BaseResponseVo.error(ReturnCodeEnum.ERROR_VIDEO_RECORDER_CALLBACK_REQUEST_ERROR);
 
     }
 

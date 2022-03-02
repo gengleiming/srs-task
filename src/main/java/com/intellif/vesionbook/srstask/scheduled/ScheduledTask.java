@@ -2,7 +2,6 @@ package com.intellif.vesionbook.srstask.scheduled;
 
 import com.intellif.vesionbook.srstask.cache.StreamDeadMapCache;
 import com.intellif.vesionbook.srstask.helper.SrsClientHelper;
-import com.intellif.vesionbook.srstask.service.VideoRecorderTaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -20,14 +19,12 @@ public class ScheduledTask {
     private StreamDeadMapCache streamDeadMapCache;
     @Resource
     private SrsClientHelper srsClientHelper;
-//    @Resource
-//    private VideoRecorderTaskService videoRecorderTaskService;
 
     /**
      * 启动服务3分钟之后，10秒钟检测一次清除无用连接
      */
     @Async
-    @Scheduled(initialDelay = 180000, fixedDelay = 10000)
+    @Scheduled(initialDelay = 10000, fixedDelay = 10000)
     public void checkStreamAndCloseUnused() {
         // 首先检测关闭异常通道
         srsClientHelper.closeErrorGBChannels();
@@ -38,23 +35,4 @@ public class ScheduledTask {
         // 再清除rtsp
         streamDeadMapCache.closeUnusedRtsp();
     }
-
-//    /**
-//     * 每5秒钟检测录像任务，开启录制
-//     */
-//    @Async
-//    @Scheduled(fixedDelay = 5000)
-//    public void checkVideoRecorderStart() {
-//        videoRecorderTaskService.videoRecordStart();
-//    }
-//
-//    /**
-//     * 每3秒钟检测录像任务，关闭录制
-//     */
-//    @Async
-//    @Scheduled(fixedDelay = 5000)
-//    public void checkVideoRecorderStop() {
-//        videoRecorderTaskService.videoRecordStop();
-//    }
-
 }

@@ -19,26 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.mybatis.spring.boot</groupId>
-            <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>2.2.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.44</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -64,12 +45,6 @@
             <artifactId>apollo-client</artifactId>
             <groupId>com.ctrip.framework.apollo</groupId>
             <version>1.9.1</version>
-        </dependency>
-        <!-- 数据源 -->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid</artifactId>
-            <version>1.2.8</version>
         </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
@@ -129,13 +104,6 @@
                                     <directory>./src/main/resources</directory>
                                     <includes>
                                         <include>apollo-env.properties</include>
-                                    </includes>
-                                    <filtering>false</filtering>
-                                </resource>
-                                <resource>
-                                    <directory>./src/main/resources/db</directory>
-                                    <includes>
-                                        <include>flyway.conf</include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>

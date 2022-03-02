@@ -23,7 +23,6 @@ import java.io.File;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 @Component
@@ -77,7 +76,7 @@ public class OssHelper {
             AssumeRoleResponse response = client.getAcsResponse(request);
             AssumeRoleResponse.Credentials credentials = response.getCredentials();
 
-            if(credentials == null) {
+            if (credentials == null) {
                 return null;
             }
 
@@ -103,7 +102,7 @@ public class OssHelper {
 
         try {
             boolean exist = ossStsCredentialsClient.doesObjectExist(ossConfig.getBucketName(), objectName);
-            if(!exist) {
+            if (!exist) {
                 log.error("object name not exist. bucket name: {}, object name: {}", ossConfig.getBucketName(), objectName);
                 return BaseResponseVo.error(ReturnCodeEnum.ERROR_OSS_OBJECT_NAME_NOT_EXIST);
 

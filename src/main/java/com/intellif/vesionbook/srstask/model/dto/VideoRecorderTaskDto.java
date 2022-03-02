@@ -10,8 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class VideoRecorderTaskDto implements Serializable
-{
+public class VideoRecorderTaskDto implements Serializable {
     private Integer page = 1;
     private Integer pageSize = 10;
 
@@ -24,7 +23,7 @@ public class VideoRecorderTaskDto implements Serializable
      */
     private String app;
 
-    /** 
+    /**
      * 应用
      */
     private String uniqueId;
@@ -34,12 +33,12 @@ public class VideoRecorderTaskDto implements Serializable
      */
     private Long startTime;
 
-    /** 
+    /**
      * 录制结束时间戳（秒）
      */
     private Long endTime;
 
-    /** 
+    /**
      * 录像任务状态 0.未开始 1.运行中 2.已结束 3. 任务异常
      */
     private Integer status;

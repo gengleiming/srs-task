@@ -23,7 +23,7 @@ public class VideoRecorderTaskController {
     VideoRecorderTaskService videoRecorderTaskService;
 
     /**
-     *  开启录像
+     * 开启录像
      */
     @PostMapping(value = "/start")
     public BaseResponseVo<PageInfo<VideoRecorderTaskListVo>> start(@RequestBody VideoRecorderReqVo videoRecorderReqVo) {
@@ -33,7 +33,7 @@ public class VideoRecorderTaskController {
     }
 
     /**
-     *  停止录像
+     * 停止录像
      */
     @PostMapping(value = "/stop")
     public BaseResponseVo<String> stop(@RequestBody VideoRecorderReqVo videoRecorderReqVo) {
@@ -42,7 +42,7 @@ public class VideoRecorderTaskController {
     }
 
     /**
-     *  获取oss下载地址
+     * 获取oss下载地址
      */
     @PostMapping(value = "/get/oss/url")
     public BaseResponseVo<GetOssUrlRspVo> getOssUrl(@RequestBody GetOssUrlReqVo getOssUrlReqVo) {

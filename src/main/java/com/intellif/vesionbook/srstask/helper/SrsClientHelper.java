@@ -43,6 +43,16 @@ public class SrsClientHelper {
         return streams;
     }
 
+    public List<GetStreamFromSrsRspVo.StreamData> getAliveStreams() {
+        List<GetStreamFromSrsRspVo.StreamData> streams = getAllStreams();
+        if(streams == null) {
+            return null;
+        }
+
+        return streams.stream().filter(
+                item -> item.getPublish() != null && item.getPublish().getActive()).collect(Collectors.toList());
+    }
+
     public List<GetStreamFromSrsRspVo.StreamData> getStreamsWithNoClients() {
         List<GetStreamFromSrsRspVo.StreamData> streams = getAllStreams();
         if(streams == null || streams.isEmpty()) {

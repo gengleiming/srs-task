@@ -75,7 +75,7 @@ public enum ReturnCodeEnum {
             return null;
         }
         for (ReturnCodeEnum c : ReturnCodeEnum
-            .values()) {
+                .values()) {
             if (c.getResultCode() == resultCode) {
                 return c;
             }
