@@ -1,4 +1,4 @@
-package com.intellif.vesionbook.srstask.model.entity;
+package com.intellif.vesionbook.srstask.model.vo.rsp;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,18 +11,12 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class StreamTask {
-    private Long id;
+public class StreamTaskRspVo {
     private String originStream;
     private String app;
     private String uniqueId;
-    private String service;
     private String rtmpOutput;
     private String httpFlvOutput;
     private String hlsOutput;
     private String webrtcOutput;
-    private Integer status;
-    private Integer forever;
-    private LocalDateTime createTime;
-    private LocalDateTime updateTime;
 }

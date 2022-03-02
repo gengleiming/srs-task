@@ -11,7 +11,7 @@ import com.intellif.vesionbook.srstask.helper.FFCommandHelper;
 import com.intellif.vesionbook.srstask.helper.OssHelper;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
 import com.intellif.vesionbook.srstask.model.vo.req.*;
-import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
+import com.intellif.vesionbook.srstask.model.vo.rsp.StreamTaskRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import com.intellif.vesionbook.srstask.service.VideoRecorderTaskService;
 import lombok.extern.slf4j.Slf4j;
@@ -124,7 +124,7 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
 //        // 开始录制
 //        if (!prepareList.isEmpty()) {
 //            log.info("start recorder list: {}", prepareList);
-//            BaseResponseVo<CreateTaskRspVo> streamResult;
+//            BaseResponseVo<StreamTaskRspVo> streamResult;
 //            for (VideoRecorderTaskListVo task : prepareList) {
 //                TaskReqVo taskReqVo = TaskReqVo.builder().app(task.getApp()).uniqueId(task.getUniqueId())
 //                        .originStream(task.getOriginStream()).channelId(task.getChannelId())
@@ -298,7 +298,7 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
                 .originStream(vo.getOriginStream()).channelId(vo.getChannelId())
                 .outputType(StreamOutputTypeEnum.RTMP.getCode()).build();
 
-        BaseResponseVo<CreateTaskRspVo> result;
+        BaseResponseVo<StreamTaskRspVo> result;
         String uniqueId;
         if (!StringUtils.isEmpty(vo.getChannelId())) {
             result = taskService.getGBStream(taskReqVo);

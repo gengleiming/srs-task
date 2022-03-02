@@ -7,10 +7,9 @@ import com.intellif.vesionbook.srstask.enums.StreamOutputTypeEnum;
 import com.intellif.vesionbook.srstask.helper.FFCommandHelper;
 import com.intellif.vesionbook.srstask.helper.JavaCVHelper;
 import com.intellif.vesionbook.srstask.helper.SrsClientHelper;
-import com.intellif.vesionbook.srstask.model.entity.StreamTask;
+import com.intellif.vesionbook.srstask.model.vo.rsp.StreamTaskRspVo;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
 import com.intellif.vesionbook.srstask.model.vo.req.*;
-import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.GetGBDataFromSrsRspVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.GetStreamFromSrsRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
@@ -49,7 +48,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(TaskReqVo taskReqVo) {
+    public BaseResponseVo<StreamTaskRspVo> getOrCreateStreamTask(TaskReqVo taskReqVo) {
 
         String app = taskReqVo.getApp();
         String uniqueId = taskReqVo.getUniqueId();
@@ -61,7 +60,7 @@ public class TaskServiceImpl implements TaskService {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_STREAM_TASK_TYPE_NOT_SUPPORT);
         }
 
-        CreateTaskRspVo vo = getOutputStream(taskReqVo.getApp(), taskReqVo.getUniqueId(), outputType);
+        StreamTaskRspVo vo = getOutputStream(taskReqVo.getApp(), taskReqVo.getUniqueId(), outputType);
 
         Boolean exists = checkCacheAliveOrClearDead(taskReqVo.getApp(), taskReqVo.getUniqueId());
         if (exists) {
@@ -121,8 +120,8 @@ public class TaskServiceImpl implements TaskService {
         return true;
     }
 
-    public CreateTaskRspVo getOutputStream(String app, String uniqueId, Integer outputType) {
-        CreateTaskRspVo vo = new CreateTaskRspVo();
+    public StreamTaskRspVo getOutputStream(String app, String uniqueId, Integer outputType) {
+        StreamTaskRspVo vo = new StreamTaskRspVo();
         if (outputType == StreamOutputTypeEnum.RTMP.getCode()) {
             vo.setRtmpOutput("rtmp://" + serverConfig.getOutputHost() + "/" + app + "/" + uniqueId);
         } else if (outputType == StreamOutputTypeEnum.HTTP_HLV.getCode()) {
@@ -214,11 +213,10 @@ public class TaskServiceImpl implements TaskService {
             Process process = streamTaskCache.getProcess(app, uniqueId);
             if (process != null && process.isAlive()) {
                 process.destroy();
-                log.info("scheduled关闭流. app: {}, uniqueId: {}", app, uniqueId);
+                log.info("close cache. app: {}, uniqueId: {}", app, uniqueId);
             }
             streamTaskCache.clearProcess(app, uniqueId);
         }
-        log.info("close cache. app: {}, unique id: {}", app, uniqueId);
     }
 
     public void startCacheFromClient(String app, List<TaskReqVo> taskVos) {
@@ -249,16 +247,16 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public BaseResponseVo<List<StreamTask>> aliveStreamTaskList(TaskListReqVo taskListReqVo) {
+    public BaseResponseVo<List<StreamTaskRspVo>> aliveStreamTaskList(TaskListReqVo taskListReqVo) {
         List<GetStreamFromSrsRspVo.StreamData> aliveStreams = srsClientHelper.getAliveStreams();
-        List<StreamTask> taskList = aliveStreams.stream().map(item -> {
-            StreamTask task = new StreamTask();
+        List<StreamTaskRspVo> taskList = aliveStreams.stream().map(item -> {
+            StreamTaskRspVo task = new StreamTaskRspVo();
             task.setApp(item.getApp());
             task.setUniqueId(item.getName());
             return task;
         }).collect(Collectors.toList());
 
-        List<StreamTask> aliveTaskList = taskList.stream().filter(
+        List<StreamTaskRspVo> aliveTaskList = taskList.stream().filter(
                 item -> checkCacheAliveOrClearDead(item.getApp(), item.getUniqueId())).collect(Collectors.toList());
         return BaseResponseVo.ok(aliveTaskList);
     }
@@ -270,7 +268,7 @@ public class TaskServiceImpl implements TaskService {
      * @return
      */
     @Override
-    public BaseResponseVo<CreateTaskRspVo> getGBStream(TaskReqVo taskReqVo) {
+    public BaseResponseVo<StreamTaskRspVo> getGBStream(TaskReqVo taskReqVo) {
         if (taskReqVo.getChannelId() == null || taskReqVo.getChannelId().isEmpty()) {
             log.error("req error, channel id is empty. req: {}", taskReqVo);
             return BaseResponseVo.error(ReturnCodeEnum.PARAM_INVALID);
@@ -292,7 +290,7 @@ public class TaskServiceImpl implements TaskService {
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_GB_CHANNEL);
         }
 
-        CreateTaskRspVo vo = new CreateTaskRspVo();
+        StreamTaskRspVo vo = new StreamTaskRspVo();
         Integer outputType = taskReqVo.getOutputType();
         if (outputType == StreamOutputTypeEnum.WEB_RTC.getCode()) {
             vo.setWebrtcOutput(gbChannelOne.getWebrtc_url());

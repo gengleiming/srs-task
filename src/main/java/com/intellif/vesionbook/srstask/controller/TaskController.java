@@ -1,9 +1,8 @@
 package com.intellif.vesionbook.srstask.controller;
 
-import com.intellif.vesionbook.srstask.model.entity.StreamTask;
+import com.intellif.vesionbook.srstask.model.vo.rsp.StreamTaskRspVo;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
 import com.intellif.vesionbook.srstask.model.vo.req.*;
-import com.intellif.vesionbook.srstask.model.vo.rsp.CreateTaskRspVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.GetStreamFromSrsRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
 import io.swagger.annotations.Api;
@@ -27,7 +26,7 @@ public class TaskController {
 
     @ApiOperation(value = "获取或创建RTSP流任务")
     @PostMapping("/get/or/create/stream/task")
-    public BaseResponseVo<CreateTaskRspVo> getOrCreateStreamTask(@RequestBody @Validated TaskReqVo taskReqVo) {
+    public BaseResponseVo<StreamTaskRspVo> getOrCreateStreamTask(@RequestBody @Validated TaskReqVo taskReqVo) {
         log.info("req: {}", taskReqVo);
         return taskService.getOrCreateStreamTask(taskReqVo);
     }
@@ -48,14 +47,14 @@ public class TaskController {
 
     @ApiOperation(value = "获取正在运行流任务列表")
     @PostMapping("/stream/task/alive/list")
-    public BaseResponseVo<List<StreamTask>> streamTaskList(@RequestBody @Validated TaskListReqVo taskListReqVo) {
+    public BaseResponseVo<List<StreamTaskRspVo>> streamTaskList(@RequestBody @Validated TaskListReqVo taskListReqVo) {
         log.info("req: {}", taskListReqVo);
         return taskService.aliveStreamTaskList(taskListReqVo);
     }
 
     @ApiOperation(value = "GB28181获取流地址")
     @PostMapping("/get/stream/gb28181")
-    public BaseResponseVo<CreateTaskRspVo> getOrCreateGB(@RequestBody @Validated TaskReqVo taskReqVo) {
+    public BaseResponseVo<StreamTaskRspVo> getOrCreateGB(@RequestBody @Validated TaskReqVo taskReqVo) {
         log.info("gb28181 req: {}", taskReqVo);
         return taskService.getGBStream(taskReqVo);
     }
