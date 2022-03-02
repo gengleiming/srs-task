@@ -1,11 +1,11 @@
 package com.intellif.vesionbook.srstask.cache;
 
 import com.intellif.vesionbook.srstask.helper.SrsClientHelper;
-import com.intellif.vesionbook.srstask.model.dto.CacheDeadDto;
 import com.intellif.vesionbook.srstask.model.vo.req.CloseTaskReqVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.GetGBDataFromSrsRspVo;
 import com.intellif.vesionbook.srstask.model.vo.rsp.GetStreamFromSrsRspVo;
 import com.intellif.vesionbook.srstask.service.TaskService;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -13,10 +13,17 @@ import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Data
+class CacheDead {
+    private String app; // app
+    private String name; // stream
+    private Integer count; // 计数
+}
+
 @Component
 @Slf4j
 public class StreamDeadMapCache {
-    private final Map<String, CacheDeadDto> deadMap = new HashMap<>();
+    private final Map<String, CacheDead> deadMap = new HashMap<>();
 
     @Resource
     SrsClientHelper srsClientHelper;
@@ -32,7 +39,7 @@ public class StreamDeadMapCache {
     }
 
     public void updateDeadMap(GetStreamFromSrsRspVo.StreamData streamMarkDead) {
-        CacheDeadDto cachedeaddto = new CacheDeadDto();
+        CacheDead cachedeaddto = new CacheDead();
         cachedeaddto.setApp(streamMarkDead.getApp());
         cachedeaddto.setName(streamMarkDead.getName());
 
@@ -63,14 +70,14 @@ public class StreamDeadMapCache {
         List<GetGBDataFromSrsRspVo.ChannelData> gbChannels = srsClientHelper.getGBChannels();
 
         List<String> removeList = new ArrayList<>();
-        for (Map.Entry<String, CacheDeadDto> entry : deadMap.entrySet()) {
+        for (Map.Entry<String, CacheDead> entry : deadMap.entrySet()) {
             String key = entry.getKey();
-            CacheDeadDto cacheDeadDto = entry.getValue();
-            if (cacheDeadDto.getCount() <= 3) {
+            CacheDead cacheDead = entry.getValue();
+            if (cacheDead.getCount() <= 3) {
                 continue;
             }
 
-            CacheDeadDto value = entry.getValue();
+            CacheDead value = entry.getValue();
             long count = gbChannels.stream().filter(item -> item.getApp().equals(value.getApp()) && item.getStream().equals(value.getName())).count();
             if (count > 0) {
                 log.info("检测关闭 dead gb28181 stream id: {}", value.getName());
@@ -88,14 +95,14 @@ public class StreamDeadMapCache {
 
     public void closeUnusedRtsp() {
         List<String> removeList = new ArrayList<>();
-        for (Map.Entry<String, CacheDeadDto> entry : deadMap.entrySet()) {
+        for (Map.Entry<String, CacheDead> entry : deadMap.entrySet()) {
             String key = entry.getKey();
-            CacheDeadDto cacheDeadDto = entry.getValue();
-            if (cacheDeadDto.getCount() <= 3) {
+            CacheDead cacheDead = entry.getValue();
+            if (cacheDead.getCount() <= 3) {
                 continue;
             }
 
-            CloseTaskReqVo reqVo = CloseTaskReqVo.builder().app(cacheDeadDto.getApp()).uniqueId(cacheDeadDto.getName()).build();
+            CloseTaskReqVo reqVo = CloseTaskReqVo.builder().app(cacheDead.getApp()).uniqueId(cacheDead.getName()).build();
             taskService.closeRtspStreamTask(reqVo);
 
             removeList.add(key);
