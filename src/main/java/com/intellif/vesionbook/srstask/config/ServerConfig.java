@@ -36,7 +36,7 @@ public class ServerConfig {
     @Value("${recorder.srs.host:192.168.18.151}")
     private String srsRecorderHost;
 
-//    @Value("${stream.support.type:rtsp,gb28181}")
-//    private String supportList;
+    @Value("${recorder.callback.url:}")
+    private String recorderFileCallbackUrl;
 
 }

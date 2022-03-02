@@ -9,7 +9,7 @@ public class VideoRecorderTaskCache {
     private final ConcurrentHashMap<String, Process> taskMap = new ConcurrentHashMap<>();
 
     public String getTaskKey(String app, String uniqueId) {
-        return "video_recorder_task_" + app + "_" + uniqueId;
+        return "recorder_" + app + "_" + uniqueId;
     }
 
     public void storeProcess(String app, String uniqueId, Process process) {

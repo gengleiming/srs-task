@@ -25,6 +25,4 @@ public class OssConfig {
     private String stsRoleSessionName;
     @Value("${oss.sts.durationSeconds}")
     private Long stsDurationSeconds;
-    @Value("${oss.zone.id:UTC}")
-    private String ossZoneId;
 }

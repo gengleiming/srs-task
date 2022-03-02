@@ -20,8 +20,8 @@ public class ScheduledTask {
     private StreamDeadMapCache streamDeadMapCache;
     @Resource
     private SrsClientHelper srsClientHelper;
-    @Resource
-    private VideoRecorderTaskService videoRecorderTaskService;
+//    @Resource
+//    private VideoRecorderTaskService videoRecorderTaskService;
 
     /**
      * 启动服务3分钟之后，10秒钟检测一次清除无用连接
@@ -39,22 +39,22 @@ public class ScheduledTask {
         streamDeadMapCache.closeUnusedRtsp();
     }
 
-    /**
-     * 每5秒钟检测录像任务，开启录制
-     */
-    @Async
-    @Scheduled(fixedDelay = 5000)
-    public void checkVideoRecorderStart() {
-        videoRecorderTaskService.videoRecordStart();
-    }
-
-    /**
-     * 每3秒钟检测录像任务，关闭录制
-     */
-    @Async
-    @Scheduled(fixedDelay = 5000)
-    public void checkVideoRecorderStop() {
-        videoRecorderTaskService.videoRecordStop();
-    }
+//    /**
+//     * 每5秒钟检测录像任务，开启录制
+//     */
+//    @Async
+//    @Scheduled(fixedDelay = 5000)
+//    public void checkVideoRecorderStart() {
+//        videoRecorderTaskService.videoRecordStart();
+//    }
+//
+//    /**
+//     * 每3秒钟检测录像任务，关闭录制
+//     */
+//    @Async
+//    @Scheduled(fixedDelay = 5000)
+//    public void checkVideoRecorderStop() {
+//        videoRecorderTaskService.videoRecordStop();
+//    }
 
 }

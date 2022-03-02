@@ -3,6 +3,7 @@ package com.intellif.vesionbook.srstask.helper;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSException;
+import com.aliyun.oss.model.ObjectMetadata;
 import com.aliyun.oss.model.PutObjectRequest;
 import com.aliyun.oss.model.PutObjectResult;
 import com.aliyuncs.DefaultAcsClient;
@@ -12,6 +13,8 @@ import com.aliyuncs.auth.sts.AssumeRoleResponse;
 import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.profile.DefaultProfile;
 import com.intellif.vesionbook.srstask.config.OssConfig;
+import com.intellif.vesionbook.srstask.enums.ReturnCodeEnum;
+import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -39,10 +42,13 @@ public class OssHelper {
         return ossClient;
     }
 
-    public boolean uploadFile(String path, String objectName) {
+    public boolean uploadFile(String path, String objectName, String downloadName) {
         OSS client = getClient();
         try {
             PutObjectRequest putObjectRequest = new PutObjectRequest(ossConfig.getBucketName(), objectName, new File(path));
+            ObjectMetadata meta = new ObjectMetadata();
+            meta.setContentDisposition("attachment; filename=\"" + downloadName + "\"");
+            putObjectRequest.setMetadata(meta);
             PutObjectResult result = client.putObject(putObjectRequest);
             log.info("upload file path: {}, object name: {}, result: {}", path, objectName, result.getResponse());
             return true;
@@ -90,19 +96,25 @@ public class OssHelper {
         return null;
     }
 
-    public String getOssUrl(String objectName, OSS ossStsCredentialsClient) {
+    public BaseResponseVo<String> getOssUrl(String objectName, OSS ossStsCredentialsClient) {
 
         LocalDateTime localDateTime = LocalDateTime.now().plusSeconds(ossConfig.getStsDurationSeconds());
-        Date date = Date.from(localDateTime.atZone(ZoneId.of(ossConfig.getOssZoneId())).toInstant());
+        Date date = Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
 
         try {
+            boolean exist = ossStsCredentialsClient.doesObjectExist(ossConfig.getBucketName(), objectName);
+            if(!exist) {
+                log.error("object name not exist. bucket name: {}, object name: {}", ossConfig.getBucketName(), objectName);
+                return BaseResponseVo.error(ReturnCodeEnum.ERROR_OSS_OBJECT_NAME_NOT_EXIST);
+
+            }
             URL url = ossStsCredentialsClient.generatePresignedUrl(ossConfig.getBucketName(), objectName, date);
-            return url.toString();
+            return BaseResponseVo.ok(url.toString());
         } catch (Exception e) {
             log.error("generate pre signed url error. bucket name: {}, object name: {}, expire date: {}",
                     ossConfig.getBucketName(), objectName, date);
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_OSS_GENERATE_OSS_URL_FAILED);
         }
-        return null;
     }
 
 }

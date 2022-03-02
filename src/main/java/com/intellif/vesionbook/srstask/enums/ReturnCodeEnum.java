@@ -29,9 +29,14 @@ public enum ReturnCodeEnum {
     ERROR_GB_CHANNEL(90000010, "stream task gb channel error", "gb281818通道异常"),
     ERROR_STREAM_CLIENTS_LIMIT(90000011, "stream clients limit", "客户端数量超限"),
     ERROR_STREAM_ONE_NULL(90000012, "get stream error", "流不存在"),
-    ERROR_STREAM_VIDEO(90000013, "stream video error", "获取流视频信息异常"),
-
     ERROR_GET_STREAM_TASK_ERROR(90000014, "stream video error", "获取流视频信息异常"),
+
+    ERROR_VIDEO_RECORDER_TASK_NOT_EXISTS(100000014, "video recorder task not exist", "录像任务不存在"),
+    ERROR_VIDEO_RECORDER_TASK_NOT_ALIVE(100000015, "video recorder task not alive", "录像任务异常终止"),
+    ERROR_OSS_OBJECT_NAME_NOT_EXIST(100000016, "oss object not exist", "oss文件对象不存在"),
+    ERROR_OSS_CLIENT_INIT_FAILED(100000018, "oss generate oss url failed", "oss客户端创建失败"),
+    ERROR_OSS_GENERATE_OSS_URL_FAILED(100000019, "oss generate oss url failed", "oss 生成地址失败"),
+    ERROR_VIDEO_RECORDER_CALLBACK_REQUEST_ERROR(100000020, "oss generate oss url failed", "录像回调请求失败"),
 
     ;
 

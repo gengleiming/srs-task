@@ -1,26 +1,19 @@
 package com.intellif.vesionbook.srstask.service;
 
-import com.github.pagehelper.PageInfo;
-import com.intellif.vesionbook.srstask.model.dto.VideoRecorderTaskDto;
-import com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask;
 import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
+import com.intellif.vesionbook.srstask.model.vo.req.GetOssUrlReqVo;
+import com.intellif.vesionbook.srstask.model.vo.req.GetOssUrlRspVo;
 import com.intellif.vesionbook.srstask.model.vo.req.SRSCallbackOnDvrVo;
-import com.intellif.vesionbook.srstask.model.vo.req.VideoRecorderTaskReqVo;
-import com.intellif.vesionbook.srstask.model.vo.rsp.VideoRecorderTaskListVo;
+import com.intellif.vesionbook.srstask.model.vo.req.VideoRecorderReqVo;
 
 import java.io.FileNotFoundException;
 
-public interface VideoRecorderTaskService
-{
-    BaseResponseVo<String> create(VideoRecorderTaskReqVo model);
+public interface VideoRecorderTaskService {
+    void dealOnDvr(SRSCallbackOnDvrVo vo) throws FileNotFoundException;
 
-    VideoRecorderTask selectById(Long id);
+    void start(VideoRecorderReqVo vo);
 
-    PageInfo<VideoRecorderTaskListVo> getList(VideoRecorderTaskDto videoRecorderTaskDto, boolean withShareUrl);
+    BaseResponseVo<String> stop(VideoRecorderReqVo vo);
 
-    void videoRecordStart();
-    void videoRecordStop();
-
-    boolean dealOnDvr(SRSCallbackOnDvrVo vo) throws FileNotFoundException;
-
+    BaseResponseVo<GetOssUrlRspVo> getOssUrl(GetOssUrlReqVo vo);
 }

@@ -1,54 +1,52 @@
 package com.intellif.vesionbook.srstask.controller;
 
-import com.intellif.vesionbook.srstask.model.dto.VideoRecorderTaskDto;
-import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
-import com.intellif.vesionbook.srstask.model.vo.req.VideoRecorderTaskReqVo;
-import com.intellif.vesionbook.srstask.model.vo.rsp.VideoRecorderTaskListVo;
-import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
-import com.intellif.vesionbook.srstask.service.VideoRecorderTaskService;
-import com.intellif.vesionbook.srstask.model.entity.VideoRecorderTask;
 import com.github.pagehelper.PageInfo;
+import com.intellif.vesionbook.srstask.model.vo.base.BaseResponseVo;
+import com.intellif.vesionbook.srstask.model.vo.req.GetOssUrlReqVo;
+import com.intellif.vesionbook.srstask.model.vo.req.GetOssUrlRspVo;
+import com.intellif.vesionbook.srstask.model.vo.req.VideoRecorderReqVo;
+import com.intellif.vesionbook.srstask.model.vo.rsp.VideoRecorderTaskListVo;
+import com.intellif.vesionbook.srstask.service.VideoRecorderTaskService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.Resource;
 
 @Slf4j
 @RestController
 @RequestMapping(value = "/api/video/recorder/task")
-public class VideoRecorderTaskController
-{
-    @Autowired
+public class VideoRecorderTaskController {
+    @Resource
     VideoRecorderTaskService videoRecorderTaskService;
 
     /**
-    **  新增
-    */
-    @PostMapping(value = "/add")
-    public BaseResponseVo<String> add(@RequestBody @Validated VideoRecorderTaskReqVo reqVo) {
-        log.info("create video recorder task reqVo: {}", reqVo);
-        return videoRecorderTaskService.create(reqVo);
+     *  开启录像
+     */
+    @PostMapping(value = "/start")
+    public BaseResponseVo<PageInfo<VideoRecorderTaskListVo>> start(@RequestBody VideoRecorderReqVo videoRecorderReqVo) {
+        log.info("videoRecorderStartReqVo: {}", videoRecorderReqVo);
+        videoRecorderTaskService.start(videoRecorderReqVo);
+        return BaseResponseVo.ok();
     }
 
     /**
-    **  查询单个
-    */
-    @PostMapping(value = "/get/{id}")
-    public BaseResponseVo<VideoRecorderTask> selectById(@PathVariable("id") Long id) {
-        VideoRecorderTask resp = videoRecorderTaskService.selectById(id);
-        return BaseResponseVo.ok(resp);
+     *  停止录像
+     */
+    @PostMapping(value = "/stop")
+    public BaseResponseVo<String> stop(@RequestBody VideoRecorderReqVo videoRecorderReqVo) {
+        log.info("videoRecorderStopReqVo: {}", videoRecorderReqVo);
+        return videoRecorderTaskService.stop(videoRecorderReqVo);
     }
 
     /**
-    **  查询列表
-    */
-    @PostMapping(value = "/list")
-    public BaseResponseVo<PageInfo<VideoRecorderTaskListVo>> selectList(@RequestBody VideoRecorderTaskDto videoRecorderTaskDto) {
-        log.info("videoRecorderTaskDto: {}", videoRecorderTaskDto);
-        PageInfo<VideoRecorderTaskListVo> list = videoRecorderTaskService.getList(videoRecorderTaskDto, true);
-        return BaseResponseVo.ok(list);
+     *  获取oss下载地址
+     */
+    @PostMapping(value = "/get/oss/url")
+    public BaseResponseVo<GetOssUrlRspVo> getOssUrl(@RequestBody GetOssUrlReqVo getOssUrlReqVo) {
+        log.info("getOssUrlReqVo: {}", getOssUrlReqVo);
+        return videoRecorderTaskService.getOssUrl(getOssUrlReqVo);
     }
-
 }
