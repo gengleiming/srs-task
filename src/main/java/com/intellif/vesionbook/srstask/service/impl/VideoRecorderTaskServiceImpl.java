@@ -244,18 +244,23 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
     public BaseResponseVo<String> stopVideoRecorderProcess(String app, String uniqueId) {
         Process process = videoRecorderTaskCache.getProcess(app, uniqueId);
         if (process == null) {
-            log.error("stop video recorder error, process not exist. app: {}, unique id: {}, process: {}",
-                    app, uniqueId, process);
+            log.error("stop video recorder error, process not exist. app: {}, unique id: {}", app, uniqueId);
             return BaseResponseVo.error(ReturnCodeEnum.ERROR_VIDEO_RECORDER_TASK_NOT_EXISTS);
         }
-        if (!process.isAlive()) {
-            log.error("stop video recorder error, process not alive. app: {}, unique id: {}, process: {}",
-                    app, uniqueId, process);
-            return BaseResponseVo.error(ReturnCodeEnum.ERROR_VIDEO_RECORDER_TASK_NOT_EXISTS);
-        } else {
+
+        boolean alive = process.isAlive();
+
+        if(alive) {
             process.destroy();
         }
+
         videoRecorderTaskCache.clearProcess(app, uniqueId);
+
+        if(!alive) {
+            log.error("stop recorder error, process not alive. app: {}, unique id: {}", app, uniqueId);
+            return BaseResponseVo.error(ReturnCodeEnum.ERROR_VIDEO_RECORDER_TASK_NOT_EXISTS);
+        }
+
         return BaseResponseVo.ok();
     }
 
@@ -311,7 +316,7 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
         uniqueId = uniqueId + "/" + vo.getTaskId();
 
         if (!result.isSuccess()) {
-            log.error("video recorder. get rtsp stream result error: {}", result);
+            log.error("video recorder. get stream result error: {}", result);
             return;
         }
 

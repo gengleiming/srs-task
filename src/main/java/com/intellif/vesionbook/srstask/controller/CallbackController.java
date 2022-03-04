@@ -46,7 +46,7 @@ public class CallbackController {
     @ApiOperation(value = "srs录像回调接口")
     @PostMapping("/on/dvr")
     public int onDvr(@RequestBody @Validated SRSCallbackOnDvrVo reqVo) throws FileNotFoundException {
-        log.info("req: {}", reqVo);
+        log.info("recorder callback req: {}", reqVo);
         videoRecorderTaskService.dealOnDvr(reqVo);
         return 0;
     }

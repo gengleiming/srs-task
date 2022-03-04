@@ -21,10 +21,10 @@ public class ScheduledTask {
     private SrsClientHelper srsClientHelper;
 
     /**
-     * 启动服务3分钟之后，10秒钟检测一次清除无用连接
+     * 10秒钟检测一次清除无用连接
      */
     @Async
-    @Scheduled(initialDelay = 10000, fixedDelay = 10000)
+    @Scheduled(fixedDelay = 10000)
     public void checkStreamAndCloseUnused() {
         // 首先检测关闭异常通道
         srsClientHelper.closeErrorGBChannels();
