@@ -41,15 +41,15 @@ public class OssHelper {
         return ossClient;
     }
 
-    public boolean uploadFile(String path, String objectName, String downloadName) {
+    public boolean uploadFile(File file, String objectName, String downloadName) {
         OSS client = getClient();
         try {
-            PutObjectRequest putObjectRequest = new PutObjectRequest(ossConfig.getBucketName(), objectName, new File(path));
+            PutObjectRequest putObjectRequest = new PutObjectRequest(ossConfig.getBucketName(), objectName, file);
             ObjectMetadata meta = new ObjectMetadata();
             meta.setContentDisposition("attachment; filename=\"" + downloadName + "\"");
             putObjectRequest.setMetadata(meta);
             PutObjectResult result = client.putObject(putObjectRequest);
-            log.info("upload file path: {}, object name: {}, result: {}", path, objectName, result.getResponse());
+            log.info("upload file path: {}, object name: {}, result: {}", file, objectName, result.getResponse());
             return true;
         } catch (OSSException oe) {
             log.error("Caught an OSSException. message: {}, code: {}, request id: {}, host id: {}",

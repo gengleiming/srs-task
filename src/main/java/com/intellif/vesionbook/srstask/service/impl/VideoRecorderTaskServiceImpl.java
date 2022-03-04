@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -267,10 +268,16 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
     @Override
     public void dealOnDvr(SRSCallbackOnDvrVo vo) {
         String filePath = vo.getFile();
+        File file = new File(filePath);
+        if(!file.exists()) {
+            log.error("deal on dvr, file not exists, file path: {}", filePath);
+            return;
+        }
+
         String objectName = ossConfig.getBucketRoot() + filePath;
         String[] split = filePath.split("/");
         String filename = split[split.length - 1];
-        boolean ok = ossHelper.uploadFile(filePath, objectName, filename);
+        boolean ok = ossHelper.uploadFile(file, objectName, filename);
         log.info("deal on dvr, upload file to oss. result: {}, file path: {}, object name: {}",
                 ok, filePath, objectName);
         if (!ok) {
