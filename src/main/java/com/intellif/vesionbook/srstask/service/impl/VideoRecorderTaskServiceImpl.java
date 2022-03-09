@@ -174,6 +174,12 @@ public class VideoRecorderTaskServiceImpl implements VideoRecorderTaskService {
 
     public void createVideoRecorderProcess(String taskId, String originStream, String app, String uniqueId) {
 
+        if(videoRecorderTaskCache.existProcess(app, uniqueId)) {
+            log.info("start video recorder exist already. task id: {}, origin stream: {}, app: {}, unique id: {}",
+                    taskId, originStream, app, uniqueId);
+            return;
+        }
+
         String recorderParam = "?taskId=" + taskId;
         // 创建流任务
         Process ffmpeg = ffCommandHelper.transcodeStream(originStream, app, uniqueId, serverConfig.getSrsRecorderHost(), recorderParam);

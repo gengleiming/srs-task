@@ -27,6 +27,15 @@ public class VideoRecorderTaskCache {
         taskMap.remove(taskKey);
     }
 
+    public boolean existProcess(String app, String uniqueId) {
+        String taskKey = getTaskKey(app, uniqueId);
+        Process process = taskMap.get(taskKey);
+        if(process == null || !process.isAlive()) {
+            return false;
+        }
+        return true;
+    }
+
     public int getProcessNumber() {
         return taskMap.size();
     }
