@@ -22,6 +22,8 @@ public class ClientCallbackHelper {
     public void recorderFileCallbackRequest(String url, RecorderFileClientCallbackVo vo) {
         HttpEntity<RecorderFileClientCallbackVo> request = new HttpEntity<>(vo);
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+        log.error("callback. url: {}, vo: {}, status code: {}, response: {}",
+                url, vo, response.getStatusCode(), response.getBody());
         if (response.getStatusCode() == HttpStatus.OK) {
             BaseResponseVo.ok();
             return;
